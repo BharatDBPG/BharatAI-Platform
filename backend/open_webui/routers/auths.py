@@ -29,6 +29,8 @@ from open_webui.config import (
 from open_webui.constants import ERROR_MESSAGES, WEBHOOK_MESSAGES
 from open_webui.env import (
     AIOHTTP_CLIENT_SESSION_SSL,
+    BHARATAI_COOKIE_DOMAIN,
+    BHARATAI_COOKIE_NAME,
     ENABLE_INITIAL_ADMIN_SIGNUP,
     ENABLE_OAUTH_TOKEN_EXCHANGE,
     REDIS_KEY_PREFIX,
@@ -202,6 +204,20 @@ async def create_session_response(
             secure=WEBUI_AUTH_COOKIE_SECURE,
             **({'max_age': max_age} if max_age is not None else {}),
         )
+
+        # Same JWT, additionally scoped to the shared domain so sibling services
+        # can pick up the session without a second login. See BHARATAI_COOKIE_DOMAIN.
+        if BHARATAI_COOKIE_DOMAIN:
+            response.set_cookie(
+                key=BHARATAI_COOKIE_NAME,
+                value=token,
+                expires=datetime_expires_at,
+                httponly=True,
+                samesite=WEBUI_AUTH_COOKIE_SAME_SITE,
+                secure=WEBUI_AUTH_COOKIE_SECURE,
+                domain=BHARATAI_COOKIE_DOMAIN,
+                **({'max_age': max_age} if max_age is not None else {}),
+            )
 
     user_permissions = await get_permissions(user.id, request.app.state.config.USER_PERMISSIONS, db=db)
 
@@ -897,6 +913,11 @@ async def signout(request: Request, response: Response, db: AsyncSession = Depen
     response.delete_cookie('token')
     response.delete_cookie('oui-session')
     response.delete_cookie('oauth_id_token')
+
+    # Must pass the same domain it was set with, otherwise the shared cookie survives
+    # sign-out and sibling services keep re-authenticating the user.
+    if BHARATAI_COOKIE_DOMAIN:
+        response.delete_cookie(BHARATAI_COOKIE_NAME, domain=BHARATAI_COOKIE_DOMAIN)
 
     oauth_session_id = request.cookies.get('oauth_session_id')
     if oauth_session_id:
