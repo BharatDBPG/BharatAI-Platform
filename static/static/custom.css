@@ -1,0 +1,69 @@
+/* === CDAC Header - Global Layout Fix (72px header) === */
+
+:root {
+  --cdac-header-offset: 0px;
+}
+
+body:has(#cdac-header:not([style*="display: none"])) {
+  --cdac-header-offset: 72px;
+}
+
+/* Main app wrapper */
+.app > div {
+  height: calc(100vh - var(--cdac-header-offset)) !important;
+  max-height: calc(100dvh - var(--cdac-header-offset)) !important;
+  margin-top: var(--cdac-header-offset);
+}
+
+/* Sidebar */
+#sidebar {
+  top: var(--cdac-header-offset) !important;
+  height: calc(100vh - var(--cdac-header-offset)) !important;
+  max-height: calc(100dvh - var(--cdac-header-offset)) !important;
+}
+
+/* Chat container */
+#chat-container {
+  height: calc(100vh - var(--cdac-header-offset)) !important;
+  max-height: calc(100dvh - var(--cdac-header-offset)) !important;
+}
+
+/* Splash screen */
+#splash-screen {
+  top: var(--cdac-header-offset) !important;
+  height: calc(100% - var(--cdac-header-offset)) !important;
+}
+
+html.dark #splash-screen {
+  top: var(--cdac-header-offset) !important;
+  height: calc(100% - var(--cdac-header-offset)) !important;
+}
+
+/* Mobile sidebar overlay */
+.fixed.z-40.top-0.right-0.left-0.bottom-0 {
+  top: var(--cdac-header-offset) !important;
+}
+
+/* Any fixed full-screen overlays, modals, drawers */
+.fixed.h-screen {
+  top: var(--cdac-header-offset) !important;
+  height: calc(100vh - var(--cdac-header-offset)) !important;
+}
+
+/* Drawers and slide-in panels */
+[class*="drawer"],
+[class*="Drawer"] {
+  top: var(--cdac-header-offset) !important;
+  max-height: calc(100vh - var(--cdac-header-offset)) !important;
+}
+
+/* Full page routes like Settings, Workspace, Notes */
+.min-h-screen {
+  min-height: calc(100vh - var(--cdac-header-offset)) !important;
+}
+
+/* Make sure our header always stays on top */
+#cdac-header {
+  top: 0 !important;
+  z-index: 99999 !important;
+}

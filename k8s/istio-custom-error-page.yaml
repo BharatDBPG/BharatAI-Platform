@@ -1,0 +1,59 @@
+---
+# CERT-In Finding 5 — Custom Error Page via Istio
+# Apply to kp-meity namespace after confirming prod URL.
+# This EnvoyFilter injects a custom 404/500 response body instead of exposing
+# Envoy/server internals in error responses.
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: custom-error-pages
+  namespace: kp-meity
+spec:
+  configPatches:
+    # Override 404 responses served by the proxy itself
+    - applyTo: HTTP_FILTER
+      match:
+        context: GATEWAY
+        listener:
+          filterChain:
+            filter:
+              name: envoy.filters.network.http_connection_manager
+      patch:
+        operation: MERGE
+        value:
+          typed_config:
+            "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
+            local_reply_config:
+              mappers:
+                - filter:
+                    status_code_filter:
+                      comparison:
+                        op: EQ
+                        value:
+                          default_value: 404
+                          runtime_key: unused
+                  status_code: 404
+                  body:
+                    inline_string: |
+                      {"error":"Not Found","message":"The requested resource does not exist.","status":404}
+                  headers_to_add:
+                    - header:
+                        key: Content-Type
+                        value: application/json
+                      keep_empty_value: false
+                - filter:
+                    status_code_filter:
+                      comparison:
+                        op: EQ
+                        value:
+                          default_value: 500
+                          runtime_key: unused
+                  status_code: 500
+                  body:
+                    inline_string: |
+                      {"error":"Internal Server Error","message":"An unexpected error occurred. Please try again later.","status":500}
+                  headers_to_add:
+                    - header:
+                        key: Content-Type
+                        value: application/json
+                      keep_empty_value: false
