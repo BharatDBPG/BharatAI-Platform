@@ -152,7 +152,3 @@ kubectl --context chncdacapp01-customer@chncdacapp01 -n kp-meity set image deplo
 
 **Permanent fix (pending):** Set proper `Cache-Control` headers at the Nginx/Ingress level so browsers always fetch fresh JS on new deployments. Requires Nginx/Ingress config change — to be done after demo in a maintenance window.
 
-## Parichay Production Credentials (received Aug 14)
-- **Client ID:** `BharatAIPlatformds35gfDoh76PgycA` (same as staging)
-- **Client Secret:** `DeNj0Nahj3cdZtGP19N40MDWplIVMTDn` (different from staging)
-- **Note:** To switch to production Parichay, update `PARICHAY_CLIENT_SECRET` and `PARICHAY_API_URL` in deployment env vars.
