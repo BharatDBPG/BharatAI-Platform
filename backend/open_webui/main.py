@@ -1464,9 +1464,9 @@ if ENABLE_SCIM:
 
 
 @app.post("/api/submit-feedback")
-async def submit_feedback_proxy(request: Request):
+async def submit_feedback_proxy(request: Request, user=Depends(get_verified_user)):
     import sqlite3 as _sqlite3
-    import json
+
     try:
         payload = await request.json()
     except Exception:
@@ -1476,20 +1476,27 @@ async def submit_feedback_proxy(request: Request):
     if not email or not comment:
         raise HTTPException(status_code=400, detail="Email and comment are required")
     db_path = os.environ.get("FEEDBACK_DB_PATH", "/app/backend/data/feedback.db")
-    try:
+
+    def _write_feedback():
         conn = _sqlite3.connect(db_path)
-        conn.execute("""CREATE TABLE IF NOT EXISTS feedback (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            email TEXT NOT NULL,
-            comment TEXT NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )""")
-        conn.execute("INSERT INTO feedback (email, comment) VALUES (?, ?)", (email, comment))
-        conn.commit()
-        conn.close()
+        try:
+            conn.execute("""CREATE TABLE IF NOT EXISTS feedback (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                email TEXT NOT NULL,
+                comment TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )""")
+            conn.execute("INSERT INTO feedback (email, comment) VALUES (?, ?)", (email, comment))
+            conn.commit()
+        finally:
+            conn.close()
+
+    try:
+        await asyncio.to_thread(_write_feedback)
         return {"success": True, "message": "Feedback submitted successfully"}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+    except Exception:
+        log.exception("Feedback DB write failed")
+        raise HTTPException(status_code=500, detail="Failed to save feedback")
 
 
 try:

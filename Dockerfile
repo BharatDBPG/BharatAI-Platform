@@ -36,11 +36,9 @@ WORKDIR /app
 RUN apk add --no-cache git
 
 COPY package.json package-lock.json ./
-# Pre-populate npm cache from locally downloaded packages (offline-first build)
-COPY npm-offline-cache /root/.npm
 
 RUN --mount=type=cache,target=/root/.npm \
-    npm install --prefer-offline --ignore-scripts --force
+    npm install --ignore-scripts --force
 
 COPY . .
 ENV APP_BUILD_HASH=${BUILD_HASH}
