@@ -72,11 +72,16 @@
 	import PinnedModelList from './Sidebar/PinnedModelList.svelte';
 	import Note from '../icons/Note.svelte';
 	import Code from '../icons/Code.svelte';
+	import Mic from '../icons/Mic.svelte';
 	import { slide } from 'svelte/transition';
 	import HotkeyHint from '../common/HotkeyHint.svelte';
 
 	const BREAKPOINT = 768;
 	const DEFAULT_PINNED_ITEMS = ['notes', 'workspace'];
+
+	// Sibling service, opened in a new browser tab rather than routed to in-app.
+	const VAARTA_URL = 'https://vaarta.bharatai.gov.in';
+	const VAARTA_LABEL = 'Vaarta ( Meeting Notes )';
 
 
 	let scrollTop = 0;
@@ -933,6 +938,28 @@
 					{/if}
 				{/each}
 
+				<div class="">
+					<Tooltip content={$i18n.t(VAARTA_LABEL)} placement="right">
+						<a
+							class=" cursor-pointer flex rounded-xl hover:bg-gray-100 dark:hover:bg-gray-850 transition group"
+							href={VAARTA_URL}
+							target="_blank"
+							rel="noopener noreferrer"
+							on:click={(e) => {
+								// The collapsed rail sits inside a button that expands the sidebar --
+								// keep the anchor's own navigation, but skip that toggle.
+								e.stopPropagation();
+							}}
+							draggable="false"
+							aria-label={$i18n.t(VAARTA_LABEL)}
+						>
+							<div class=" self-center flex items-center justify-center size-9">
+								<Mic className="size-4.5" />
+							</div>
+						</a>
+					</Tooltip>
+				</div>
+
 			</div>
 		</button>
 
@@ -1185,6 +1212,26 @@
 								</div>
 							{/if}
 						{/each}
+					</div>
+
+					<div class="px-[0.4375rem] flex justify-center text-gray-800 dark:text-gray-200">
+						<a
+							id="sidebar-vaarta-button"
+							class="grow flex items-center space-x-3 rounded-2xl px-2.5 py-2 hover:bg-gray-100 dark:hover:bg-gray-900 transition"
+							href={VAARTA_URL}
+							target="_blank"
+							rel="noopener noreferrer"
+							draggable="false"
+							aria-label={$i18n.t(VAARTA_LABEL)}
+						>
+							<div class="self-center">
+								<Mic className="size-4.5" strokeWidth="2" />
+							</div>
+
+							<div class="flex self-center translate-y-[0.5px]">
+								<div class=" self-center text-sm font-primary">{$i18n.t(VAARTA_LABEL)}</div>
+							</div>
+						</a>
 					</div>
 
 				</div>
