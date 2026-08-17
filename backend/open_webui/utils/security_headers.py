@@ -2,15 +2,39 @@ import os
 import re
 from typing import Dict
 
-from fastapi import Request
-from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.datastructures import MutableHeaders
+from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 
-class SecurityHeadersMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next):
-        response = await call_next(request)
-        response.headers.update(set_security_headers())
-        return response
+class SecurityHeadersMiddleware:
+    """Pure-ASGI security headers middleware.
+
+    Injects security headers on every HTTP response without wrapping the
+    downstream app in an anyio cancel scope.  The old BaseHTTPMiddleware
+    version introduced the exact cancel-scope CancelledError storm
+    described in open_webui/utils/asgi_middleware.py — DB calls and
+    streaming responses would get cancelled mid-flight on any client
+    disconnect or outer middleware exit.
+    """
+
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope['type'] != 'http':
+            await self.app(scope, receive, send)
+            return
+
+        security_headers = set_security_headers()
+
+        async def send_with_headers(message: Message) -> None:
+            if message['type'] == 'http.response.start':
+                headers = MutableHeaders(scope=message)
+                for key, value in security_headers.items():
+                    headers[key] = value
+            await send(message)
+
+        await self.app(scope, receive, send_with_headers)
 
 
 def set_security_headers() -> Dict[str, str]:
@@ -51,8 +75,16 @@ def set_security_headers() -> Dict[str, str]:
             "style-src 'self' 'unsafe-inline'; "
             "img-src 'self' data: blob: https:; "
             "font-src 'self' data:; "
-            "connect-src 'self' wss: ws:; "
-            "frame-ancestors 'self';"
+            # data: blob: required: frontend fetches data: URIs during image
+            # processing (loader.js) and connects to blob: WebSockets.
+            "connect-src 'self' ws: wss: data: blob:; "
+            "frame-ancestors 'self'; "
+            # blob: required for the OpenWebUI frontend WebWorker used during
+            # image upload/processing.
+            "worker-src blob: 'self'; "
+            # data: blob: required for Varya pipe which serves video as
+            # data:video/mp4;base64,... inside <video> tags.
+            "media-src 'self' data: blob:;"
         ),
     }
 

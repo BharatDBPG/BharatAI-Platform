@@ -147,8 +147,15 @@ async def get_captcha(request: Request):
 
 
 async def _validate_captcha(redis, token: str | None, answer: str | None) -> bool:
-    """Return True if the answer matches the stored CAPTCHA text (Redis-backed)."""
-    if not token or not answer or not redis:
+    """Return True if the answer matches the stored CAPTCHA text (Redis-backed).
+
+    When Redis is unavailable captcha cannot be stored or verified, so we
+    skip the check rather than blocking all logins.  The rate-limiter's
+    in-memory fallback still provides brute-force protection in that state.
+    """
+    if not redis:
+        return True  # Redis down — captcha unenforceable, allow through
+    if not token or not answer:
         return False
     key = f'{REDIS_KEY_PREFIX}:captcha:{token}'
     stored = await redis.get(key)
@@ -721,7 +728,7 @@ async def signin(
                 db=db,
             )
     else:
-        if signin_rate_limiter.is_limited(form_data.email.lower()):
+        if await asyncio.get_event_loop().run_in_executor(None, signin_rate_limiter.is_limited, form_data.email.lower()):
             raise HTTPException(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
                 detail=ERROR_MESSAGES.RATE_LIMIT_EXCEEDED,
