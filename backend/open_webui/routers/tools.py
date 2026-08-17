@@ -63,7 +63,7 @@ async def get_tool_module(request, tool_id, load_from_db=True):
 @router.get('/', response_model=list[ToolUserResponse])
 async def get_tools(
     request: Request,
-    user=Depends(get_admin_user),
+    user=Depends(get_verified_user),
     db: AsyncSession = Depends(get_async_session),
 ):
     tools = []

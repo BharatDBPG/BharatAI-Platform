@@ -43,7 +43,7 @@ router = APIRouter()
 
 
 @router.get('/', response_model=list[FunctionResponse])
-async def get_functions(user=Depends(get_admin_user), db: AsyncSession = Depends(get_async_session)):
+async def get_functions(user=Depends(get_verified_user), db: AsyncSession = Depends(get_async_session)):
     return await Functions.get_functions(db=db)
 
 
