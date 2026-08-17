@@ -479,11 +479,9 @@
 							<div
 								class="text-xl font-bold bg-linear-to-r from-orange-400 to-amber-400 bg-clip-text text-transparent text-center mb-3"
 							>
-								{#if $config?.onboarding ?? false}
-									{$i18n.t(`Get started with {{WEBUI_NAME}}`, { WEBUI_NAME: $WEBUI_NAME })}
-								{:else if mode === 'ldap'}
+								{#if mode === 'ldap'}
 									{$i18n.t(`Sign in to {{WEBUI_NAME}} with LDAP`, { WEBUI_NAME: $WEBUI_NAME })}
-								{:else if mode === 'signin'}
+								{:else if mode === 'signin' || ($config?.onboarding ?? false)}
 									{$i18n.t(`Sign in to {{WEBUI_NAME}}`, { WEBUI_NAME: $WEBUI_NAME })}
 								{:else}
 									{$i18n.t(`Sign up to {{WEBUI_NAME}}`, { WEBUI_NAME: $WEBUI_NAME })}
@@ -492,7 +490,7 @@
 
 
 							<!-- Primary: Login via Parichay -->
-							{#if $config?.oauth?.providers?.parichay}
+							{#if $config?.oauth?.providers?.parichay && !openWebUIFormOpen}
 								<button
 									type="button"
 									class="bg-linear-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white font-semibold text-sm py-2.5 w-full rounded-xl shadow-lg shadow-orange-500/10 hover:shadow-orange-500/20 transition duration-200 flex items-center justify-center gap-2 mb-3"
@@ -520,7 +518,7 @@
 							{/if}
 
 							<!-- or divider -->
-							{#if ($config?.features.enable_login_form || $config?.features.enable_ldap || form) && $config?.oauth?.providers?.parichay}
+							{#if ($config?.features.enable_login_form || $config?.features.enable_ldap || form) && $config?.oauth?.providers?.parichay && !openWebUIFormOpen}
 								<div class="inline-flex items-center justify-center w-full mb-3">
 									<hr class="w-32 h-px border-0 bg-white/10" />
 									<span class="px-3 text-xs font-medium text-gray-400">{$i18n.t('or')}</span>
