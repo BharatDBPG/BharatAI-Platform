@@ -1788,8 +1788,6 @@ class OAuthManager:
 
             if user:
                 determined_role = await self.get_user_role(user, user_data)
-                if determined_role == 'pending':
-                    determined_role = 'user'
                 if user.role != determined_role:
                     await Users.update_user_role_by_id(user.id, determined_role, db=db)
                     # Update the user object in memory as well,
@@ -1859,8 +1857,6 @@ class OAuthManager:
                         name = email
 
                     new_role = await self.get_user_role(None, user_data)
-                    if new_role == 'pending':
-                        new_role = 'user'
                     user = await Auths.insert_new_auth(
                         email=email,
                         password=get_password_hash(str(uuid.uuid4())),  # Random password, not used

@@ -54,6 +54,8 @@
 	let captchaStatus = '';
 	let captchaStatusType = ''; // 'success' | 'error'
 
+	let openWebUIFormOpen = false;
+
 	async function refreshCaptcha() {
 		captchaInputValue = '';
 		captchaVerified = false;
@@ -488,16 +490,84 @@
 								{/if}
 							</div>
 
-							{#if $config?.onboarding ?? false}
-								<div class="mb-2 text-center text-xs font-medium text-gray-400">
-									ⓘ {$WEBUI_NAME}
-									{$i18n.t(
-										'does not make any external connections, and your data stays securely on your locally hosted server.'
-									)}
+
+							<!-- Primary: Login via Parichay -->
+							{#if $config?.oauth?.providers?.parichay}
+								<button
+									type="button"
+									class="bg-linear-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white font-semibold text-sm py-2.5 w-full rounded-xl shadow-lg shadow-orange-500/10 hover:shadow-orange-500/20 transition duration-200 flex items-center justify-center gap-2 mb-3"
+									on:click={() => {
+										window.location.replace(`${WEBUI_BASE_URL}/oauth/parichay/login`);
+									}}
+								>
+									<svg
+										xmlns="http://www.w3.org/2000/svg"
+										fill="none"
+										viewBox="0 0 24 24"
+										stroke-width="1.5"
+										stroke="currentColor"
+										class="size-5"
+										aria-hidden="true"
+									>
+										<path
+											stroke-linecap="round"
+											stroke-linejoin="round"
+											d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.57-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z"
+										/>
+									</svg>
+									{$i18n.t('Login via Parichay')}
+								</button>
+							{/if}
+
+							<!-- or divider -->
+							{#if ($config?.features.enable_login_form || $config?.features.enable_ldap || form) && $config?.oauth?.providers?.parichay}
+								<div class="inline-flex items-center justify-center w-full mb-3">
+									<hr class="w-32 h-px border-0 bg-white/10" />
+									<span class="px-3 text-xs font-medium text-gray-400">{$i18n.t('or')}</span>
+									<hr class="w-32 h-px border-0 bg-white/10" />
 								</div>
 							{/if}
 
+							<!-- Collapsible: Login Using OpenWebUI -->
 							{#if $config?.features.enable_login_form || $config?.features.enable_ldap || form}
+								<button
+									type="button"
+									class="bg-linear-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white font-semibold text-sm py-2.5 w-full rounded-xl shadow-lg shadow-orange-500/10 hover:shadow-orange-500/20 transition duration-200 flex items-center justify-center gap-2 relative px-4 mb-2"
+									on:click={() => {
+										openWebUIFormOpen = !openWebUIFormOpen;
+									}}
+								>
+									<svg
+										xmlns="http://www.w3.org/2000/svg"
+										fill="none"
+										viewBox="0 0 24 24"
+										stroke-width="1.5"
+										stroke="currentColor"
+										class="size-5"
+										aria-hidden="true"
+									>
+										<path
+											stroke-linecap="round"
+											stroke-linejoin="round"
+											d="M9 17.25v1.007a3 3 0 0 1-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0 1 15 18.257V17.25m6-12V15a2.25 2.25 0 0 1-2.25 2.25H5.25A2.25 2.25 0 0 1 3 15V5.25m18 0A2.25 2.25 0 0 0 18.75 3H5.25A2.25 2.25 0 0 0 3 5.25m18 0H3"
+										/>
+									</svg>
+									<span>{$i18n.t('Login Using OpenWebUI')}</span>
+									<svg
+										class="w-4 h-4 absolute right-4 transition-transform duration-200 {openWebUIFormOpen
+											? 'rotate-180'
+											: ''}"
+										fill="none"
+										viewBox="0 0 24 24"
+										stroke="currentColor"
+										stroke-width="2"
+									>
+										<path stroke-linecap="round" stroke-linejoin="round" d="m19 9-7 7-7-7" />
+									</svg>
+								</button>
+							{/if}
+
+							{#if ($config?.features.enable_login_form || $config?.features.enable_ldap || form) && openWebUIFormOpen}
 								<div class="flex flex-col space-y-2.5">
 									{#if mode === 'signup'}
 										<div>
@@ -756,7 +826,7 @@
 							{/if}
 
 							<div class="mt-3">
-								{#if $config?.features.enable_login_form || $config?.features.enable_ldap || form}
+								{#if ($config?.features.enable_login_form || $config?.features.enable_ldap || form) && openWebUIFormOpen}
 									{#if mode === 'ldap'}
 										<button
 											class="bg-linear-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white font-semibold text-sm py-2.5 w-full rounded-xl shadow-lg shadow-orange-500/10 hover:shadow-orange-500/20 transition duration-200"
@@ -801,16 +871,18 @@
 								{/if}
 							</div>
 
-							<div class="flex justify-center mt-4">
-								<img
-									src="/open-webui-logo.png"
-									alt="open-webui-logo"
-									class="w-10 rounded-full"
-								/>
-							</div>
 						</form>
 
-						{#if Object.keys($config?.oauth?.providers ?? {}).length > 0}
+						<!-- OI Icon — always visible below both login options -->
+						<div class="flex justify-center mt-4">
+							<img
+								src="/open-webui-logo.png"
+								alt="open-webui-logo"
+								class="w-10 rounded-full"
+							/>
+						</div>
+
+						{#if Object.keys($config?.oauth?.providers ?? {}).filter((p) => p !== 'parichay').length > 0}
 							<div class="inline-flex items-center justify-center w-full my-6">
 								<hr class="w-32 h-px border-0 bg-white/10" />
 								{#if $config?.features.enable_login_form || $config?.features.enable_ldap || form}
@@ -941,31 +1013,6 @@
 										}}
 									>
 										<span>{$i18n.t('Continue with {{provider}}', { provider: 'Feishu' })}</span>
-									</button>
-								{/if}
-								{#if $config?.oauth?.providers?.parichay}
-									<button
-										class="flex justify-center items-center bg-white/[0.04] hover:bg-white/[0.08] text-gray-300 hover:text-white border border-white/10 transition duration-200 w-full rounded-xl font-medium text-sm py-2.5"
-										on:click={() => {
-											window.location.replace(`${WEBUI_BASE_URL}/oauth/parichay/login`);
-										}}
-									>
-										<svg
-											xmlns="http://www.w3.org/2000/svg"
-											fill="none"
-											viewBox="0 0 24 24"
-											stroke-width="1.5"
-											stroke="currentColor"
-											class="size-5 mr-3"
-											aria-hidden="true"
-										>
-											<path
-												stroke-linecap="round"
-												stroke-linejoin="round"
-												d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.57-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z"
-											/>
-										</svg>
-										<span>{$i18n.t('Continue with {{provider}}', { provider: 'Parichay' })}</span>
 									</button>
 								{/if}
 							</div>
