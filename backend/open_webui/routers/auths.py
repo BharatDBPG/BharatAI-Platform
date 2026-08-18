@@ -165,7 +165,7 @@ async def _validate_captcha(redis, token: str | None, answer: str | None) -> boo
         return False
     await redis.delete(key)
     stored_str = stored if isinstance(stored, str) else stored.decode()
-    return stored_str.upper() == answer.strip().upper()
+    return stored_str == answer.strip()
 
 
 async def create_session_response(

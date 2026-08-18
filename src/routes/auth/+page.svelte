@@ -82,11 +82,24 @@
 			return;
 		}
 
-		// Actual validation is done server-side on submit.
-		// Here we only confirm the user has typed something before enabling the submit button.
+		if (!/^[A-Za-z0-9]+$/.test(userInput)) {
+			captchaStatus = $i18n.t('Invalid characters. Use only letters and numbers.');
+			captchaStatusType = 'error';
+			captchaInputValue = '';
+			return;
+		}
+
 		captchaVerified = true;
 		captchaStatus = $i18n.t('Click sign in to verify.');
 		captchaStatusType = 'success';
+	}
+
+	function onCaptchaInput() {
+		if (captchaVerified) {
+			captchaVerified = false;
+			captchaStatus = $i18n.t('Captcha changed. Please verify again.');
+			captchaStatusType = 'error';
+		}
 	}
 
 	const REDIRECT_ALLOWED_HOST_SUFFIX = '.bharatai.gov.in';
@@ -769,6 +782,7 @@
 												disabled={captchaVerified}
 												placeholder={$i18n.t('Enter the captcha')}
 												class="px-4 py-2.5 rounded-xl border border-white/10 bg-white/[0.04] focus:border-orange-500 focus:ring-1 focus:ring-orange-500/20 text-sm outline-hidden text-white transition duration-200 flex-1 disabled:opacity-60"
+												on:input={onCaptchaInput}
 												on:keydown={(e) => {
 													if (e.key === 'Enter') {
 														e.preventDefault();
