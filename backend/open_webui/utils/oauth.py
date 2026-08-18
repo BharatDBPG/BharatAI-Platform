@@ -72,6 +72,8 @@ from open_webui.constants import ERROR_MESSAGES, WEBHOOK_MESSAGES
 from open_webui.env import (
     AIOHTTP_CLIENT_ALLOW_REDIRECTS,
     AIOHTTP_CLIENT_SESSION_SSL,
+    BHARATAI_COOKIE_DOMAIN,
+    BHARATAI_COOKIE_NAME,
     ENABLE_OAUTH_EMAIL_FALLBACK,
     ENABLE_OAUTH_ID_TOKEN_COOKIE,
     OAUTH_CLIENT_INFO_ENCRYPTION_KEY,
@@ -1788,8 +1790,6 @@ class OAuthManager:
 
             if user:
                 determined_role = await self.get_user_role(user, user_data)
-                if determined_role == 'pending':
-                    determined_role = 'user'
                 if user.role != determined_role:
                     await Users.update_user_role_by_id(user.id, determined_role, db=db)
                     # Update the user object in memory as well,
@@ -1859,8 +1859,6 @@ class OAuthManager:
                         name = email
 
                     new_role = await self.get_user_role(None, user_data)
-                    if new_role == 'pending':
-                        new_role = 'user'
                     user = await Auths.insert_new_auth(
                         email=email,
                         password=get_password_hash(str(uuid.uuid4())),  # Random password, not used
@@ -1944,6 +1942,19 @@ class OAuthManager:
             secure=WEBUI_AUTH_COOKIE_SECURE,
             **({'max_age': cookie_max_age} if cookie_max_age is not None else {}),
         )
+
+        # Shared-domain copy for sibling services; kept httponly since only their
+        # backends read it. See BHARATAI_COOKIE_DOMAIN.
+        if BHARATAI_COOKIE_DOMAIN:
+            response.set_cookie(
+                key=BHARATAI_COOKIE_NAME,
+                value=jwt_token,
+                httponly=True,
+                samesite=WEBUI_AUTH_COOKIE_SAME_SITE,
+                secure=WEBUI_AUTH_COOKIE_SECURE,
+                domain=BHARATAI_COOKIE_DOMAIN,
+                **({'max_age': cookie_max_age} if cookie_max_age is not None else {}),
+            )
 
         # Legacy cookies for compatibility with older frontend versions
         if ENABLE_OAUTH_ID_TOKEN_COOKIE:

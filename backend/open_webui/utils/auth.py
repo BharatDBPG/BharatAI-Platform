@@ -21,6 +21,8 @@ from fastapi import BackgroundTasks, Depends, HTTPException, Request, Response, 
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from open_webui.constants import ERROR_MESSAGES
 from open_webui.env import (
+    BHARATAI_COOKIE_DOMAIN,
+    BHARATAI_COOKIE_NAME,
     ENABLE_OTEL,
     ENABLE_PASSWORD_VALIDATION,
     LICENSE_BLOB,
@@ -388,6 +390,9 @@ async def get_current_user(
         # Delete the token cookie
         if request.cookies.get('token'):
             response.delete_cookie('token')
+
+        if BHARATAI_COOKIE_DOMAIN and request.cookies.get(BHARATAI_COOKIE_NAME):
+            response.delete_cookie(BHARATAI_COOKIE_NAME, domain=BHARATAI_COOKIE_DOMAIN)
 
         if request.cookies.get('oauth_id_token'):
             response.delete_cookie('oauth_id_token')

@@ -627,6 +627,9 @@ WEBUI_AUTH_COOKIE_SECURE = (
     == 'true'
 )
 
+BHARATAI_COOKIE_DOMAIN = os.getenv('BHARATAI_COOKIE_DOMAIN', '')
+BHARATAI_COOKIE_NAME = os.getenv('BHARATAI_COOKIE_NAME', 'bharatai_token')
+
 
 if WEBUI_AUTH and WEBUI_SECRET_KEY == '':
     raise SystemExit(

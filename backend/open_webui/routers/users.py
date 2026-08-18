@@ -117,7 +117,7 @@ async def search_users(
     order_by: str | None = None,
     direction: str | None = None,
     page: int | None = 1,
-    user=Depends(get_admin_user),
+    user=Depends(get_verified_user),
     db: AsyncSession = Depends(get_async_session),
 ):
     limit = PAGE_ITEM_COUNT
