@@ -145,6 +145,7 @@ ENV UV_LINK_MODE=copy
 
 RUN --mount=type=cache,target=/root/.cache/pip \
     --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=cache,target=/tmp/model_build_cache \
     set -e; \
     pip3 install uv; \
     if [ "$USE_CUDA" = "true" ]; then \
@@ -152,20 +153,38 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     # fix: pin torch<=2.9.1 - torch 2.10.0 aarch64 wheels cause SIGILL on ARM devices (RPi 4 Cortex-A72) #21349
     pip3 install 'torch<=2.9.1' torchvision torchaudio --index-url https://download.pytorch.org/whl/$USE_CUDA_DOCKER_VER; \
     uv pip install --system -r requirements.txt; \
+    SENTENCE_TRANSFORMERS_HOME=/tmp/model_build_cache/st HF_HOME=/tmp/model_build_cache/hf \
     python -c "import os; from sentence_transformers import SentenceTransformer; SentenceTransformer(os.environ['RAG_EMBEDDING_MODEL'], device='cpu')"; \
+    SENTENCE_TRANSFORMERS_HOME=/tmp/model_build_cache/st HF_HOME=/tmp/model_build_cache/hf \
     python -c "import os; from sentence_transformers import SentenceTransformer; SentenceTransformer(os.environ.get('AUXILIARY_EMBEDDING_MODEL', 'TaylorAI/bge-micro-v2'), device='cpu')"; \
-    python -c "import os; from faster_whisper import WhisperModel; WhisperModel(os.environ['WHISPER_MODEL'], device='cpu', compute_type='int8', download_root=os.environ['WHISPER_MODEL_DIR'])"; \
+    python -c "import os; from faster_whisper import WhisperModel; WhisperModel(os.environ['WHISPER_MODEL'], device='cpu', compute_type='int8', download_root='/tmp/model_build_cache/whisper')"; \
+    TIKTOKEN_CACHE_DIR=/tmp/model_build_cache/tiktoken \
     python -c "import os; import tiktoken; tiktoken.get_encoding(os.environ['TIKTOKEN_ENCODING_NAME'])"; \
-    python -c "import nltk; nltk.download('punkt_tab')"; \
+    python -c "import nltk; nltk.download('punkt_tab', download_dir='/tmp/model_build_cache/nltk')"; \
+    mkdir -p /app/backend/data/cache/embedding/models /app/backend/data/cache/whisper/models /app/backend/data/cache/tiktoken /root/nltk_data; \
+    cp -rp /tmp/model_build_cache/st/. /app/backend/data/cache/embedding/models/ 2>/dev/null || true; \
+    cp -rp /tmp/model_build_cache/hf/. /app/backend/data/cache/embedding/models/ 2>/dev/null || true; \
+    cp -rp /tmp/model_build_cache/whisper/. /app/backend/data/cache/whisper/models/ 2>/dev/null || true; \
+    cp -rp /tmp/model_build_cache/tiktoken/. /app/backend/data/cache/tiktoken/ 2>/dev/null || true; \
+    cp -rp /tmp/model_build_cache/nltk/. /root/nltk_data/ 2>/dev/null || true; \
     else \
     pip3 install 'torch<=2.9.1' torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu; \
     uv pip install --system -r requirements.txt; \
     if [ "$USE_SLIM" != "true" ]; then \
+    SENTENCE_TRANSFORMERS_HOME=/tmp/model_build_cache/st HF_HOME=/tmp/model_build_cache/hf \
     python -c "import os; from sentence_transformers import SentenceTransformer; SentenceTransformer(os.environ['RAG_EMBEDDING_MODEL'], device='cpu')"; \
+    SENTENCE_TRANSFORMERS_HOME=/tmp/model_build_cache/st HF_HOME=/tmp/model_build_cache/hf \
     python -c "import os; from sentence_transformers import SentenceTransformer; SentenceTransformer(os.environ.get('AUXILIARY_EMBEDDING_MODEL', 'TaylorAI/bge-micro-v2'), device='cpu')"; \
-    python -c "import os; from faster_whisper import WhisperModel; WhisperModel(os.environ['WHISPER_MODEL'], device='cpu', compute_type='int8', download_root=os.environ['WHISPER_MODEL_DIR'])"; \
+    python -c "import os; from faster_whisper import WhisperModel; WhisperModel(os.environ['WHISPER_MODEL'], device='cpu', compute_type='int8', download_root='/tmp/model_build_cache/whisper')"; \
+    TIKTOKEN_CACHE_DIR=/tmp/model_build_cache/tiktoken \
     python -c "import os; import tiktoken; tiktoken.get_encoding(os.environ['TIKTOKEN_ENCODING_NAME'])"; \
-    python -c "import nltk; nltk.download('punkt_tab')"; \
+    python -c "import nltk; nltk.download('punkt_tab', download_dir='/tmp/model_build_cache/nltk')"; \
+    mkdir -p /app/backend/data/cache/embedding/models /app/backend/data/cache/whisper/models /app/backend/data/cache/tiktoken /root/nltk_data; \
+    cp -rp /tmp/model_build_cache/st/. /app/backend/data/cache/embedding/models/ 2>/dev/null || true; \
+    cp -rp /tmp/model_build_cache/hf/. /app/backend/data/cache/embedding/models/ 2>/dev/null || true; \
+    cp -rp /tmp/model_build_cache/whisper/. /app/backend/data/cache/whisper/models/ 2>/dev/null || true; \
+    cp -rp /tmp/model_build_cache/tiktoken/. /app/backend/data/cache/tiktoken/ 2>/dev/null || true; \
+    cp -rp /tmp/model_build_cache/nltk/. /root/nltk_data/ 2>/dev/null || true; \
     fi; \
     fi; \
     mkdir -p /app/backend/data; chown -R $UID:$GID /app/backend/data/; \
@@ -193,6 +212,8 @@ COPY --chown=$UID:$GID ./backend .
 
 # embed terms PDF — must go into /app/build/static/ so config.py picks it up at startup
 COPY --chown=$UID:$GID ./src/terms.pdf /app/build/static/terms.pdf
+COPY --chown=$UID:$GID ./static/user-manual-signin.pdf /app/build/static/user-manual-signin.pdf
+COPY --chown=$UID:$GID ./static/user-manual-app.pdf /app/build/static/user-manual-app.pdf
 
 EXPOSE 8080
 
