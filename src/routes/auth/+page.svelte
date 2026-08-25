@@ -271,7 +271,8 @@
 		});
 
 		if (sessionUser) {
-			await setSessionUser(sessionUser);
+			mode = 'signup-done';
+			loggingIn = false;
 		} else {
 			loggingIn = false;
 		}
@@ -353,7 +354,9 @@
 		localStorage.token = token;
 
 		const newUserFlag = $page.url.searchParams.get('new_user');
-		if (newUserFlag === '1') {
+		const profileIncomplete = !sessionUser.department || !sessionUser.designation || !sessionUser.mobile_number;
+
+		if (newUserFlag === '1' || profileIncomplete) {
 			openWebUIFormOpen = true;
 			mode = 'signup-complete';
 			name = sessionUser.name || $page.url.searchParams.get('name') || '';
@@ -593,11 +596,11 @@
 				<div
 					class="w-full {showManual
 						? 'md:w-full'
-						: 'md:w-[45%]'} h-full flex flex-col justify-center items-center p-5 md:p-6 bg-black/10 dark:bg-black/30 backdrop-blur-md relative"
+						: 'md:w-[45%]'} min-h-full flex flex-col items-center p-5 md:p-6 bg-black/10 dark:bg-black/30 backdrop-blur-md relative overflow-y-auto"
 				>
-					<div class="w-full max-w-md z-10">
+					<div class="w-full max-w-md my-auto z-10">
 						<form
-							class=" flex flex-col justify-center"
+							class="flex flex-col justify-center"
 							action="."
 							method="post"
 							on:submit={(e) => {
@@ -635,6 +638,8 @@
 									{$i18n.t(`Sign in to {{WEBUI_NAME}} with LDAP`, { WEBUI_NAME: $WEBUI_NAME })}
 								{:else if mode === 'signup-complete'}
 									{$i18n.t('Complete your profile')}
+								{:else if mode === 'signup-done'}
+									{$i18n.t('Registration Successful!')}
 								{:else if mode === 'signin' || ($config?.onboarding ?? false)}
 									{$i18n.t(`Sign in to {{WEBUI_NAME}}`, { WEBUI_NAME: $WEBUI_NAME })}
 								{:else}
@@ -643,8 +648,37 @@
 							</div>
 
 
+							<!-- Registration success — shown after email/password signup -->
+							{#if mode === 'signup-done'}
+								<div class="flex flex-col items-center gap-4 py-4 text-center">
+									<div class="w-14 h-14 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center">
+										<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-7 h-7 text-emerald-400">
+											<path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+										</svg>
+									</div>
+									<div>
+										<p class="text-sm text-gray-200 font-medium mb-1">Your account has been created!</p>
+										<p class="text-xs text-gray-400 leading-relaxed">
+											Your account is pending approval. Please sign in via <span class="text-orange-400 font-medium">Parichay</span> to verify your identity — your registration details will be linked automatically.
+										</p>
+									</div>
+									<button
+										type="button"
+										class="bg-linear-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white font-semibold text-sm py-2.5 w-full rounded-xl shadow-lg shadow-orange-500/10 hover:shadow-orange-500/20 transition duration-200 flex items-center justify-center gap-2 mt-1"
+										on:click={() => {
+											window.location.replace(`${WEBUI_BASE_URL}/oauth/parichay/login`);
+										}}
+									>
+										<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-5">
+											<path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.57-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" />
+										</svg>
+										{$i18n.t('Sign In via Parichay')}
+									</button>
+								</div>
+							{/if}
+
 							<!-- Primary: Login via Parichay -->
-							{#if $config?.oauth?.providers?.parichay && !openWebUIFormOpen}
+							{#if $config?.oauth?.providers?.parichay && !openWebUIFormOpen && mode !== 'signup-done'}
 								<button
 									type="button"
 									class="bg-linear-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white font-semibold text-sm py-2.5 w-full rounded-xl shadow-lg shadow-orange-500/10 hover:shadow-orange-500/20 transition duration-200 flex items-center justify-center gap-2 mb-3"
@@ -672,7 +706,7 @@
 							{/if}
 
 							<!-- or divider -->
-							{#if ($config?.features.enable_login_form || $config?.features.enable_ldap || form) && $config?.oauth?.providers?.parichay && !openWebUIFormOpen}
+							{#if ($config?.features.enable_login_form || $config?.features.enable_ldap || form) && $config?.oauth?.providers?.parichay && !openWebUIFormOpen && mode !== 'signup-done'}
 								<div class="inline-flex items-center justify-center w-full mb-3">
 									<hr class="w-32 h-px border-0 bg-white/10" />
 									<span class="px-3 text-xs font-medium text-gray-400">{$i18n.t('or')}</span>
@@ -681,7 +715,7 @@
 							{/if}
 
 							<!-- Collapsible: Login Using OpenWebUI -->
-							{#if $config?.features.enable_login_form || $config?.features.enable_ldap || form}
+							{#if ($config?.features.enable_login_form || $config?.features.enable_ldap || form) && mode !== 'signup-done'}
 								<button
 									type="button"
 									class="bg-linear-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white font-semibold text-sm py-2.5 w-full rounded-xl shadow-lg shadow-orange-500/10 hover:shadow-orange-500/20 transition duration-200 flex items-center justify-center gap-2 relative px-4 mb-2"
@@ -719,7 +753,7 @@
 								</button>
 							{/if}
 
-							{#if (($config?.features.enable_login_form || $config?.features.enable_ldap || form) && openWebUIFormOpen) || mode === 'signup-complete'}
+							{#if ((($config?.features.enable_login_form || $config?.features.enable_ldap || form) && openWebUIFormOpen) || mode === 'signup-complete') && mode !== 'signup-done'}
 								<div class="flex flex-col space-y-2.5">
 									{#if mode === 'signup' || mode === 'signup-complete'}
 										<div>
@@ -1039,7 +1073,7 @@
 							{/if}
 
 							<div class="mt-3">
-								{#if (($config?.features.enable_login_form || $config?.features.enable_ldap || form) && openWebUIFormOpen) || mode === 'signup-complete'}
+								{#if ((($config?.features.enable_login_form || $config?.features.enable_ldap || form) && openWebUIFormOpen) || mode === 'signup-complete') && mode !== 'signup-done'}
 									{#if mode === 'ldap'}
 										<button
 											class="bg-linear-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white font-semibold text-sm py-2.5 w-full rounded-xl shadow-lg shadow-orange-500/10 hover:shadow-orange-500/20 transition duration-200"

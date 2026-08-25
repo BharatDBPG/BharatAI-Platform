@@ -727,7 +727,7 @@
 								type="button"
 								class="flex items-center text-xs text-gray-400 hover:text-orange-400 transition duration-200 mb-3 -mt-1"
 								on:click={() => {
-									showLoginForm = false;
+									goto('/');
 								}}
 							>
 								<svg
@@ -1007,6 +1007,7 @@
 												disabled={captchaVerified}
 												placeholder={$i18n.t('Enter the captcha')}
 												class="px-4 py-2.5 rounded-xl border border-white/10 bg-white/[0.04] focus:border-orange-500 focus:ring-1 focus:ring-orange-500/20 text-sm outline-hidden text-white transition duration-200 flex-1 disabled:opacity-60"
+												on:input={() => { captchaInputValue = captchaInputValue.toUpperCase(); }}
 												on:keydown={(e) => {
 													if (e.key === 'Enter') {
 														e.preventDefault();
@@ -1096,9 +1097,7 @@
 													type="button"
 													on:click={() => {
 														if (mode === 'signin') {
-															// /staff is the internal credential sign-in page only —
-															// registration belongs on the public /auth page.
-															goto('/auth?mode=signup');
+															mode = 'signup';
 														} else {
 															mode = 'signin';
 														}
