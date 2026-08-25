@@ -468,6 +468,7 @@ from open_webui.env import (
     WEBUI_SECRET_KEY,
     WEBUI_SESSION_COOKIE_SAME_SITE,
     WEBUI_SESSION_COOKIE_SECURE,
+    DATA_DIR,
 )
 from open_webui.internal.db import ScopedSession, engine, get_async_session
 from open_webui.models.access_grants import AccessGrants
@@ -1464,7 +1465,7 @@ if ENABLE_SCIM:
 
 
 @app.post("/api/submit-feedback")
-async def submit_feedback_proxy(request: Request):
+async def submit_feedback_proxy(request: Request, user=Depends(get_verified_user)):
     import sqlite3 as _sqlite3
 
     try:
@@ -1475,7 +1476,7 @@ async def submit_feedback_proxy(request: Request):
     comment = payload.get("comment", "").strip()
     if not email or not comment:
         raise HTTPException(status_code=400, detail="Email and comment are required")
-    db_path = os.environ.get("FEEDBACK_DB_PATH", "/app/backend/data/feedback.db")
+    db_path = os.environ.get("FEEDBACK_DB_PATH", str(DATA_DIR / "feedback.db"))
 
     def _write_feedback():
         conn = _sqlite3.connect(db_path)
