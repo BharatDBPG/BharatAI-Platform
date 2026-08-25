@@ -146,8 +146,8 @@
 			return;
 		}
 
-		if (!/^[A-Za-z0-9]+$/.test(userInput)) {
-			captchaStatus = $i18n.t('Invalid characters. Use only letters and numbers.');
+		if (!/^[A-Z0-9]+$/.test(userInput)) {
+			captchaStatus = $i18n.t('Invalid characters. Use only capital letters and numbers.');
 			captchaStatusType = 'error';
 			captchaInputValue = '';
 			return;
@@ -159,6 +159,7 @@
 	}
 
 	function onCaptchaInput() {
+		captchaInputValue = captchaInputValue.toUpperCase();
 		if (captchaVerified) {
 			captchaVerified = false;
 			captchaStatus = $i18n.t('Captcha changed. Please verify again.');
@@ -594,7 +595,8 @@
 						? 'md:w-full'
 						: 'md:w-[45%]'} h-full flex flex-col items-center p-5 md:p-6 bg-black/10 dark:bg-black/30 backdrop-blur-md relative overflow-y-auto"
 				>
-					<div class="w-full max-w-md my-auto z-10">
+					<div class="flex-1 min-h-[1rem]"></div>
+					<div class="w-full max-w-md z-10">
 						<form
 							class=" flex flex-col justify-center"
 							action="."
@@ -1263,6 +1265,7 @@
 							</div>
 						{/if}
 					</div>
+					<div class="flex-1 min-h-[1rem]"></div>
 				</div>
 			{/if}
 		</div>
