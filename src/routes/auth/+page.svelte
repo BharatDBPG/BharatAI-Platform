@@ -444,6 +444,19 @@
 			}
 		}
 
+		// Hard redirect: /auth in signin/ldap mode is not a valid landing page.
+		// Only signup, signup-complete, onboarding, and trusted-header flows stay here.
+		if (
+			mode !== 'signup' &&
+			mode !== 'signup-complete' &&
+			!$config?.onboarding &&
+			!($config?.features?.auth_trusted_header ?? false) &&
+			$config?.features?.auth !== false
+		) {
+			window.location.replace(`${WEBUI_BASE_URL}/oauth/parichay/login`);
+			return;
+		}
+
 		loaded = true;
 		setLogoImage();
 		refreshCaptcha();
@@ -1108,7 +1121,7 @@
 														if (mode === 'signin') {
 															mode = 'signup';
 														} else {
-															mode = 'signin';
+															window.location.replace(`${WEBUI_BASE_URL}/oauth/parichay/login`);
 														}
 													}}
 												>
