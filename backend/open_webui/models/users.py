@@ -67,6 +67,11 @@ class User(Base):  # identity & profile
     status_message = Column(Text, nullable=True)
     status_expires_at = Column(BigInteger, nullable=True)
 
+    # Registration details (collected at signup)
+    department = Column(String, nullable=True)
+    designation = Column(String, nullable=True)
+    mobile_number = Column(String, nullable=True)
+
     # Metadata
     info = Column(JSON, nullable=True)
     settings = Column(JSON, nullable=True)
@@ -103,6 +108,10 @@ class UserModel(BaseModel):
     status_emoji: str | None = None
     status_message: str | None = None
     status_expires_at: int | None = None
+
+    department: str | None = None
+    designation: str | None = None
+    mobile_number: str | None = None
 
     info: dict | None = None
     settings: UserSettings | None = None
@@ -252,12 +261,21 @@ class UserRoleUpdateForm(BaseModel):
     role: str
 
 
+class CompleteProfileForm(BaseModel):
+    department: str | None = None
+    designation: str | None = None
+    mobile_number: str | None = None
+
+
 class UserUpdateForm(BaseModel):
     role: str | None = None
     name: str | None = None
     email: str | None = None
     profile_image_url: str | None = None
     password: str | None = None
+    department: str | None = None
+    designation: str | None = None
+    mobile_number: str | None = None
 
     @field_validator('profile_image_url', mode='before')
     @classmethod
@@ -277,6 +295,9 @@ class UsersTable:
         role: str = 'pending',
         username: str | None = None,
         oauth: dict | None = None,
+        department: str | None = None,
+        designation: str | None = None,
+        mobile_number: str | None = None,
         db: AsyncSession | None = None,
     ) -> UserModel | None:
         async with get_async_db_context(db) as session:
@@ -292,6 +313,9 @@ class UsersTable:
                     'updated_at': int(time.time()),
                     'username': username,
                     'oauth': oauth,
+                    'department': department,
+                    'designation': designation,
+                    'mobile_number': mobile_number,
                 }
             )
             result = User(**user.model_dump())

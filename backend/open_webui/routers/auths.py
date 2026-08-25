@@ -58,9 +58,11 @@ from open_webui.models.auths import (
 from open_webui.models.groups import Groups
 from open_webui.models.oauth_sessions import OAuthSessions
 from open_webui.models.users import (
+    CompleteProfileForm,
     UpdateProfileForm,
     UserModel,
     UserProfileImageResponse,
+    UserResponse,
     Users,
     UserStatus,
 )
@@ -793,6 +795,9 @@ async def signup_handler(
     password: str,
     name: str,
     profile_image_url: str = '/user.png',
+    department: str | None = None,
+    designation: str | None = None,
+    mobile_number: str | None = None,
     *,
     db: AsyncSession,
 ) -> UserModel:
@@ -814,6 +819,9 @@ async def signup_handler(
         name=name,
         profile_image_url=profile_image_url,
         role=request.app.state.config.DEFAULT_USER_ROLE,
+        department=department,
+        designation=designation,
+        mobile_number=mobile_number,
         db=db,
     )
     if not user:
@@ -885,6 +893,9 @@ async def signup(
             form_data.password,
             form_data.name,
             form_data.profile_image_url,
+            form_data.department,
+            form_data.designation,
+            form_data.mobile_number,
             db=db,
         )
         return await create_session_response(request, user, db, response, set_cookie=True)
@@ -893,6 +904,28 @@ async def signup(
     except Exception as err:
         log.error(f'Signup error: {str(err)}')
         raise HTTPException(500, detail='An internal error occurred during signup.')
+
+
+############################
+# Complete Profile (post-OAuth first-time provisioning)
+############################
+
+
+@router.post('/complete-profile', response_model=UserResponse)
+async def complete_profile(
+    form_data: CompleteProfileForm,
+    user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_async_session),
+):
+    # Uses get_current_user (not get_verified_user) so pending-role users can call this.
+    updated = await Users.update_user_by_id(
+        user.id,
+        form_data.model_dump(exclude_none=True),
+        db=db,
+    )
+    if not updated:
+        raise HTTPException(500, detail=ERROR_MESSAGES.DEFAULT())
+    return updated
 
 
 @router.post('/signout')

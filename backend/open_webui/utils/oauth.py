@@ -1587,6 +1587,7 @@ class OAuthManager:
             raise HTTPException(404)
 
         error_message = None
+        is_new_user = False
         try:
             client = self.get_client(provider)
 
@@ -1859,6 +1860,7 @@ class OAuthManager:
                         name = email
 
                     new_role = await self.get_user_role(None, user_data)
+                    is_new_user = True
                     user = await Auths.insert_new_auth(
                         email=email,
                         password=get_password_hash(str(uuid.uuid4())),  # Random password, not used
@@ -1925,6 +1927,12 @@ class OAuthManager:
         if error_message:
             redirect_url = f'{redirect_url}?error={urllib.parse.quote_plus(error_message)}'
             return RedirectResponse(url=redirect_url, headers=response.headers)
+
+        if is_new_user and user:
+            new_user_qs = urllib.parse.urlencode(
+                {'new_user': '1', 'name': user.name, 'email': user.email}
+            )
+            redirect_url = f'{redirect_url}?{new_user_qs}'
 
         response = RedirectResponse(url=redirect_url, headers=response.headers)
 
