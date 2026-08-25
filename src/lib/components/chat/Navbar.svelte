@@ -9,12 +9,14 @@
 		config,
 		mobile,
 		settings,
+		showAppGuide,
 		showArchivedChats,
 		showControls,
 		showSidebar,
 		temporaryChatEnabled,
 		user
 	} from '$lib/stores';
+	import UserManualBook from '../icons/UserManualBook.svelte';
 
 	import { slide } from 'svelte/transition';
 	import { page } from '$app/stores';
@@ -128,6 +130,19 @@
 
 				<div class="self-start flex flex-none items-center text-gray-600 dark:text-gray-400">
 					<!-- <div class="md:hidden flex self-center w-[1px] h-5 mx-2 bg-gray-300 dark:bg-stone-700" /> -->
+
+					<Tooltip content={$i18n.t('User Guide')}>
+						<button
+							class="flex cursor-pointer px-2 py-2 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-850 transition"
+							id="app-guide-button"
+							on:click={() => showAppGuide.set(!$showAppGuide)}
+							aria-label={$i18n.t('User Guide')}
+						>
+							<div class=" m-auto self-center">
+								<UserManualBook className=" size-5" strokeWidth="1.5" />
+							</div>
+						</button>
+					</Tooltip>
 
 					{#if $user?.role === 'user' ? ($user?.permissions?.chat?.temporary ?? true) && !($user?.permissions?.chat?.temporary_enforced ?? false) : true}
 						{#if !chat?.id}

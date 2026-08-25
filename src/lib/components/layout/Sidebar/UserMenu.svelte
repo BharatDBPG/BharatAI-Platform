@@ -21,6 +21,8 @@
 
 	import Dropdown from '$lib/components/common/Dropdown.svelte';
 	import Tooltip from '$lib/components/common/Tooltip.svelte';
+	import SubmitFeedbackModal from './SubmitFeedbackModal.svelte';
+	import ChatBubbleOval from '$lib/components/icons/ChatBubbleOval.svelte';
 	import ArchiveBox from '$lib/components/icons/ArchiveBox.svelte';
 	import QuestionMarkCircle from '$lib/components/icons/QuestionMarkCircle.svelte';
 	import Map from '$lib/components/icons/Map.svelte';
@@ -54,6 +56,7 @@
 	export let showActiveUsers = true;
 
 	let showUserStatusModal = false;
+	let showSubmitFeedbackModal = false;
 	let shiftKey = false;
 
 	const dispatch = createEventDispatcher();
@@ -110,6 +113,7 @@
 />
 
 <ShortcutsModal bind:show={$showShortcuts} />
+<SubmitFeedbackModal bind:show={showSubmitFeedbackModal} />
 <UserStatusModal
 	bind:show={showUserStatusModal}
 	onSave={async () => {
@@ -616,6 +620,20 @@
 					<div class=" self-center truncate">{$i18n.t('Keyboard shortcuts')}</div>
 				</button>
 			{/if}
+
+			<button
+				class="flex rounded-xl py-1.5 px-3 w-full hover:bg-gray-50 dark:hover:bg-gray-800 transition cursor-pointer select-none"
+				type="button"
+				on:click={() => {
+					show = false;
+					showSubmitFeedbackModal = true;
+				}}
+			>
+				<div class=" self-center mr-3">
+					<ChatBubbleOval className="size-5" />
+				</div>
+				<div class=" self-center truncate">{$i18n.t('Submit Feedback')}</div>
+			</button>
 
 			<hr class=" border-gray-50/30 dark:border-gray-800/30 my-1 p-0" />
 

@@ -47,6 +47,7 @@
 	import AccountPending from '$lib/components/layout/Overlay/AccountPending.svelte';
 	import UpdateInfoToast from '$lib/components/layout/UpdateInfoToast.svelte';
 	import Spinner from '$lib/components/common/Spinner.svelte';
+	import AppGuidePanel from '$lib/components/layout/AppGuidePanel.svelte';
 	import { Shortcut, shortcuts } from '$lib/shortcuts';
 
 	const i18n = getContext('i18n');
@@ -454,19 +455,23 @@
 					</div>
 				{/if}
 
-				<Sidebar />
+				<div class="flex-1 min-w-0 h-full flex flex-row justify-end">
+					<Sidebar />
 
-				{#if loaded}
-					<slot />
-				{:else}
-					<div
-						class="w-full flex-1 h-full flex items-center justify-center {$showSidebar
-							? '  md:max-w-[calc(100%-var(--sidebar-width))]'
-							: ' '}"
-					>
-						<Spinner className="size-5" />
-					</div>
-				{/if}
+					{#if loaded}
+						<slot />
+					{:else}
+						<div
+							class="w-full flex-1 h-full flex items-center justify-center {$showSidebar
+								? '  md:max-w-[calc(100%-var(--sidebar-width))]'
+								: ' '}"
+						>
+							<Spinner className="size-5" />
+						</div>
+					{/if}
+				</div>
+
+				<AppGuidePanel />
 			{/if}
 		</div>
 	</div>

@@ -110,6 +110,11 @@ export const selectedTerminalId: Writable<string | null> = writable(null);
 export const artifactCode = writable(null);
 export const artifactContents = writable(null);
 
+// In-app user guide panel — toggled from Navbar "?" button
+export const showAppGuide = writable(false);
+// Drag-to-resize width, persisted by AppGuidePanel.svelte itself
+export const appGuideWidth = writable(560);
+
 export const embed = writable(null);
 
 export const temporaryChatEnabled = writable(false);
