@@ -71,7 +71,7 @@
 	const openManual = () => {
 		showManual = true;
 		if (!manualFrameSrc) {
-			manualFrameSrc = '/static/user-manual-signin.pdf#zoom=100';
+			manualFrameSrc = '/static/user-manual-signin.pdf#zoom=page-width';
 		}
 		try {
 			localStorage.setItem(SIGNIN_GUIDE_STORAGE_KEY, '1');
@@ -417,7 +417,7 @@
 
 		try {
 			if (localStorage.getItem(SIGNIN_GUIDE_STORAGE_KEY) === '1') {
-				manualFrameSrc = '/static/user-manual-signin.pdf#zoom=100';
+				manualFrameSrc = '/static/user-manual-signin.pdf#zoom=page-width';
 				showManual = true;
 			}
 		} catch (e) {}
@@ -478,7 +478,7 @@
 		<div
 			class="w-full {showManual
 				? 'max-w-md'
-				: 'max-w-5xl'} min-h-[600px] md:min-h-[680px] my-auto rounded-3xl overflow-hidden border border-white/10 bg-white/[0.03] backdrop-blur-2xl shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] flex flex-col md:flex-row z-10 transition-[max-width,transform] duration-500 ease-in-out {showManual
+				: 'max-w-5xl'} min-h-[600px] md:min-h-[680px] max-h-[calc(100vh-2rem)] md:max-h-[calc(100vh-4rem)] my-auto rounded-3xl overflow-hidden border border-white/10 bg-white/[0.03] backdrop-blur-2xl shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] flex flex-col md:flex-row z-10 transition-[max-width,transform] duration-500 ease-in-out {showManual
 				? 'md:-translate-x-[18vw]'
 				: ''}"
 		>
@@ -557,7 +557,7 @@
 				<div
 					class="w-full {showManual
 						? 'md:w-full'
-						: 'md:w-[45%]'} min-h-full flex flex-col justify-center items-center p-5 md:p-6 bg-black/10 dark:bg-black/30 backdrop-blur-md relative overflow-y-auto"
+						: 'md:w-[45%]'} min-h-full flex flex-col items-center p-5 md:p-6 bg-black/10 dark:bg-black/30 backdrop-blur-md relative overflow-y-auto"
 				>
 					<div class="w-full max-w-md my-auto z-10">
 						<form

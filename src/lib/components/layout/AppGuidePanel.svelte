@@ -8,13 +8,7 @@
 	// is opened — not on initial app load.
 	let frameSrc = '';
 	$: if ($showAppGuide && !frameSrc) {
-		// Explicit #zoom=100 — an absolute value, not a "fit to container"
-		// keyword. Chrome's built-in PDF viewer remembers the last zoom it
-		// computed across documents in the same browser session, so a
-		// relative fit (page-width/FitH) in one panel can bleed into the
-		// next PDF opened afterward, even in a differently-sized panel. An
-		// explicit percentage avoids that entirely.
-		frameSrc = '/static/user-manual-app.pdf#zoom=100';
+		frameSrc = '/static/user-manual-app.pdf#zoom=page-width';
 	}
 
 	const close = () => {
