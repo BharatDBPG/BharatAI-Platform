@@ -593,11 +593,9 @@
 				<div
 					class="w-full {showManual
 						? 'md:w-full'
-						: 'md:w-[45%]'} h-full flex flex-col bg-black/10 dark:bg-black/30 backdrop-blur-md relative"
+						: 'md:w-[45%]'} h-full flex flex-col justify-center items-center p-5 md:p-6 bg-black/10 dark:bg-black/30 backdrop-blur-md relative"
 				>
-					<!-- Scroll wrapper: takes full allocated height, scrolls when form overflows -->
-					<div class="flex-1 min-h-0 overflow-y-auto flex flex-col items-center p-5 md:p-6">
-					<div class="m-auto w-full max-w-md z-10">
+					<div class="w-full max-w-md z-10">
 						<form
 							class=" flex flex-col justify-center"
 							action="."
@@ -1266,7 +1264,6 @@
 							</div>
 						{/if}
 					</div>
-					</div><!-- end scroll wrapper -->
 				</div>
 			{/if}
 		</div>

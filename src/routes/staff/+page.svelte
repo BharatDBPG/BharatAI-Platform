@@ -532,12 +532,10 @@
 						{/if}
 
 						<div class="grid">
-						{#if !showLoginForm}
-							<!-- Entry buttons: Continue with Parichay / Continue with Open WebUI -->
+						{#if false}
+							<!-- Parichay chooser intentionally disabled on /staff — staff login is OpenWebUI only -->
 							<div
 								class="col-start-1 row-start-1 flex flex-col space-y-3 mt-2"
-								in:fly={{ y: 10, duration: 360, delay: 90, easing: quintOut }}
-								out:fly={{ y: -10, duration: 260, easing: quintOut }}
 							>
 								<button
 									type="button"
