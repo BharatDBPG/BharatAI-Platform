@@ -8,7 +8,7 @@
 	// is opened — not on initial app load.
 	let frameSrc = '';
 	$: if ($showAppGuide && !frameSrc) {
-		frameSrc = '/static/user-manual-app.pdf#zoom=page-width';
+		frameSrc = '/static/user-manual-app.pdf#view=FitH&navpanes=0';
 	}
 
 	const close = () => {

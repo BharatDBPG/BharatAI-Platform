@@ -71,7 +71,7 @@
 	const openManual = () => {
 		showManual = true;
 		if (!manualFrameSrc) {
-			manualFrameSrc = '/static/user-manual-signin.pdf#zoom=page-width';
+			manualFrameSrc = '/static/user-manual-signin.pdf#view=FitH&navpanes=0';
 		}
 		try {
 			localStorage.setItem(SIGNIN_GUIDE_STORAGE_KEY, '1');
@@ -89,6 +89,35 @@
 		if (e.key === 'Escape' && showManual) {
 			closeManual();
 		}
+	};
+
+	// --- Guide panel drag-to-resize ---
+	const MANUAL_W_KEY = 'bharatai_manual_panel_w';
+	const MANUAL_MIN_W = 280;
+	const MANUAL_MAX_RATIO = 0.88;
+	let manualWidth = 660;
+	let isManualResizing = false;
+	let manualRsStartX = 0;
+	let manualRsStartW = 0;
+
+	const startManualResize = (e: MouseEvent) => {
+		isManualResizing = true;
+		manualRsStartX = e.clientX;
+		manualRsStartW = manualWidth;
+		document.body.style.userSelect = 'none';
+	};
+
+	const doManualResize = (clientX: number) => {
+		const maxW = Math.round(window.innerWidth * MANUAL_MAX_RATIO);
+		const dx = manualRsStartX - clientX;
+		manualWidth = Math.min(maxW, Math.max(MANUAL_MIN_W, manualRsStartW + dx));
+	};
+
+	const endManualResize = () => {
+		if (!isManualResizing) return;
+		isManualResizing = false;
+		document.body.style.userSelect = '';
+		try { localStorage.setItem(MANUAL_W_KEY, String(manualWidth)); } catch (e) {}
 	};
 
 	async function refreshCaptcha() {
@@ -416,8 +445,10 @@
 		refreshCaptcha();
 
 		try {
+			const savedW = Number(localStorage.getItem(MANUAL_W_KEY));
+			if (!isNaN(savedW) && savedW >= MANUAL_MIN_W) manualWidth = savedW;
 			if (localStorage.getItem(SIGNIN_GUIDE_STORAGE_KEY) === '1') {
-				manualFrameSrc = '/static/user-manual-signin.pdf#zoom=page-width';
+				manualFrameSrc = '/static/user-manual-signin.pdf#view=FitH&navpanes=0';
 				showManual = true;
 			}
 		} catch (e) {}
@@ -444,7 +475,11 @@
 	}}
 />
 
-<svelte:window on:keydown={handleManualKeydown} />
+<svelte:window
+	on:keydown={handleManualKeydown}
+	on:mousemove={(e) => { if (isManualResizing) doManualResize(e.clientX); }}
+	on:mouseup={endManualResize}
+/>
 
 <div
 	class="w-full min-h-screen flex items-center justify-center p-4 md:p-8 text-white relative overflow-hidden"
@@ -557,7 +592,7 @@
 				<div
 					class="w-full {showManual
 						? 'md:w-full'
-						: 'md:w-[45%]'} min-h-full flex flex-col items-center p-5 md:p-6 bg-black/10 dark:bg-black/30 backdrop-blur-md relative overflow-y-auto"
+						: 'md:w-[45%]'} h-full flex flex-col items-center p-5 md:p-6 bg-black/10 dark:bg-black/30 backdrop-blur-md relative overflow-y-auto"
 				>
 					<div class="w-full max-w-md my-auto z-10">
 						<form
@@ -1237,11 +1272,21 @@
 
 <!-- Registration & Sign-in Guide panel — fixed overlay, slides in from right -->
 <div
-	class="fixed top-0 right-0 h-full {showManual
-		? 'w-full md:w-[44%]'
-		: 'w-0'} overflow-hidden bg-[#0a0b10] border-l border-white/10 shadow-[-12px_0_40px_rgba(0,0,0,0.35)] flex flex-col z-[9990] transition-[width] duration-500 ease-in-out"
+	class="fixed top-0 right-0 h-full overflow-hidden bg-[#0a0b10] border-l border-white/10 shadow-[-12px_0_40px_rgba(0,0,0,0.35)] flex flex-col z-[9990] {isManualResizing ? '' : 'transition-[width] duration-500 ease-in-out'}"
+	style="width: {showManual ? `min(${manualWidth}px, 100%)` : '0px'};"
 	aria-hidden={!showManual}
 >
+	<!-- Drag-to-resize handle on left edge -->
+	{#if showManual}
+		<div
+			class="absolute top-0 left-0 w-2 h-full cursor-col-resize z-10 group"
+			on:mousedown={startManualResize}
+			role="separator"
+			aria-label={$i18n.t('Resize guide panel')}
+		>
+			<div class="absolute top-1/2 left-[3px] -translate-y-1/2 w-[2px] h-10 rounded-full bg-white/10 group-hover:bg-orange-400/60 {isManualResizing ? '!bg-orange-400' : ''} transition-colors"></div>
+		</div>
+	{/if}
 	<div class="flex items-center justify-between gap-4 px-6 py-4 border-b border-white/10 bg-black/20 shrink-0">
 		<h3 class="text-white font-semibold text-base truncate">
 			{$i18n.t('Registration & Sign-in Guide')}
@@ -1255,13 +1300,16 @@
 			&times;
 		</button>
 	</div>
-	<div class="flex-1 min-h-0 bg-[#0d0d0d]">
+	<div class="flex-1 min-h-0 bg-[#0d0d0d] relative">
 		{#if manualFrameSrc}
 			<iframe
 				title="Registration and Sign-in User Guide"
 				src={manualFrameSrc}
 				class="w-full h-full border-0 block"
 			></iframe>
+		{/if}
+		{#if isManualResizing}
+			<div class="absolute inset-0 z-10 cursor-col-resize"></div>
 		{/if}
 	</div>
 </div>

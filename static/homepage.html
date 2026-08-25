@@ -325,8 +325,12 @@
     .manual-trigger-link:hover, .manual-trigger-link:focus-visible { color: #fff; }
     .manual-trigger-underline { color: var(--gold); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
     .manual-trigger-link:hover .manual-trigger-underline, .manual-trigger-link:focus-visible .manual-trigger-underline { color: var(--saffron); }
-    .manual-panel { position: fixed; top: 0; right: 0; width: 0%; height: 100vh; overflow: hidden; background: #0a0b10; border-left: 1px solid rgba(255,255,255,0.08); box-shadow: -12px 0 40px rgba(0,0,0,0.35); display: flex; flex-direction: column; z-index: 9990; transition: width 0.45s cubic-bezier(0.4, 0, 0.2, 1); }
+    .manual-panel { position: fixed; top: 0; right: 0; width: 0%; min-width: 0; height: 100vh; overflow: hidden; background: #0a0b10; border-left: 1px solid rgba(255,255,255,0.08); box-shadow: -12px 0 40px rgba(0,0,0,0.35); display: flex; flex-direction: column; z-index: 9990; transition: width 0.45s cubic-bezier(0.4, 0, 0.2, 1); }
     body.manual-open .manual-panel { width: 44%; }
+    .manual-panel.is-resizing { transition: none !important; }
+    .manual-resize-handle { position: absolute; top: 0; left: 0; width: 8px; height: 100%; cursor: col-resize; z-index: 2; }
+    .manual-resize-handle::after { content: ''; position: absolute; top: 50%; left: 3px; transform: translateY(-50%); width: 2px; height: 40px; border-radius: 2px; background: rgba(255,255,255,0.08); transition: background 0.15s ease; }
+    .manual-resize-handle:hover::after, .manual-panel.is-resizing .manual-resize-handle::after { background: rgba(226,118,27,0.6); }
     .manual-panel-header { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1.1rem 1.4rem; border-bottom: 1px solid rgba(255,255,255,0.08); background: rgba(0,0,0,0.18); }
     .manual-panel-title { font-family: var(--display); font-size: 1.05rem; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .manual-close-btn { flex: 0 0 auto; width: 32px; height: 32px; border-radius: 50%; border: none; background: #e63946; color: #fff; font-size: 20px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.15s ease, transform 0.15s ease; }
@@ -541,12 +545,13 @@
   </div>
 
   <div class="manual-panel" id="manualPanel" aria-hidden="true">
+    <div id="manualResizeHandle" class="manual-resize-handle" aria-hidden="true"></div>
     <div class="manual-panel-header">
       <h3 class="manual-panel-title">Registration &amp; Sign-in Guide</h3>
       <button class="manual-close-btn" id="manualCloseBtn" aria-label="Close user guide">&times;</button>
     </div>
     <div class="manual-panel-body">
-      <iframe id="manualPdfFrame" class="manual-pdf-frame" title="Registration and Sign-in User Guide" src="" data-src="/static/user-manual-signin.pdf#zoom=page-width"></iframe>
+      <iframe id="manualPdfFrame" class="manual-pdf-frame" title="Registration and Sign-in User Guide" src="" data-src="/static/user-manual-signin.pdf#view=FitH&navpanes=0"></iframe>
     </div>
   </div>
 
@@ -557,8 +562,16 @@
       var closeBtn = document.getElementById('manualCloseBtn');
       var panel = document.getElementById('manualPanel');
       var frame = document.getElementById('manualPdfFrame');
+      var resizeHandle = document.getElementById('manualResizeHandle');
+      var PANEL_W_KEY = 'bharatai_manual_panel_w';
+      var MIN_W = 280, rsActive = false, rsStartX = 0, rsStartW = 0;
+
+      function getSavedWidth() { try { var v = Number(localStorage.getItem(PANEL_W_KEY)); return (v >= MIN_W) ? v : null; } catch(e) { return null; } }
+
       function openManual(persist) {
         if (!frame.getAttribute('src')) { frame.setAttribute('src', frame.getAttribute('data-src')); }
+        var saved = getSavedWidth();
+        if (saved) { panel.style.width = saved + 'px'; } else { panel.style.width = ''; }
         document.body.classList.add('manual-open');
         panel.setAttribute('aria-hidden', 'false');
         if (persist !== false) { try { localStorage.setItem(STORAGE_KEY, '1'); } catch (e) {} }
@@ -568,6 +581,31 @@
         panel.setAttribute('aria-hidden', 'true');
         try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
       }
+
+      resizeHandle.addEventListener('mousedown', function(e) {
+        if (!document.body.classList.contains('manual-open')) return;
+        rsActive = true;
+        rsStartX = e.clientX;
+        rsStartW = panel.offsetWidth;
+        panel.classList.add('is-resizing');
+        document.body.style.userSelect = 'none';
+        e.preventDefault();
+      });
+      document.addEventListener('mousemove', function(e) {
+        if (!rsActive) return;
+        var maxW = Math.round(window.innerWidth * 0.88);
+        var dx = rsStartX - e.clientX;
+        var newW = Math.min(maxW, Math.max(MIN_W, rsStartW + dx));
+        panel.style.width = newW + 'px';
+      });
+      document.addEventListener('mouseup', function() {
+        if (!rsActive) return;
+        rsActive = false;
+        panel.classList.remove('is-resizing');
+        document.body.style.userSelect = '';
+        try { localStorage.setItem(PANEL_W_KEY, String(panel.offsetWidth)); } catch(e) {}
+      });
+
       openBtn.addEventListener('click', function () { openManual(); });
       closeBtn.addEventListener('click', closeManual);
       document.addEventListener('keydown', function (e) {
