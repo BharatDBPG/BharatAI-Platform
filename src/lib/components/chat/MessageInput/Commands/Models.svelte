@@ -66,7 +66,7 @@
 
 {#if filteredItems.length > 0}
 	{#each filteredItems as model, modelIdx}
-		<Tooltip content={model.id} placement="top-start">
+		<Tooltip content={model?.info?.meta?.hide_model_id ? '' : model.id} placement="top-start">
 			<button
 				class="px-2.5 py-1.5 rounded-xl w-full text-left {modelIdx === selectedIdx
 					? 'bg-gray-50 dark:bg-gray-800 selected-command-option-button'

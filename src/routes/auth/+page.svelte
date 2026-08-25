@@ -5,6 +5,8 @@
 	import { toast } from 'svelte-sonner';
 
 	import { onMount, getContext, tick } from 'svelte';
+	import { fly } from 'svelte/transition';
+	import { quintOut } from 'svelte/easing';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 
@@ -14,6 +16,7 @@
 		getSessionUser,
 		userSignIn,
 		userSignUp,
+		completeUserProfile,
 		updateUserTimezone
 	} from '$lib/apis/auths';
 
@@ -46,6 +49,11 @@
 
 	let ldapUsername = '';
 
+	let department = '';
+	let designation = '';
+	let mobileNumber = '';
+	let pendingOauthUser: any = null;
+
 	// --- Server-side CAPTCHA state ---
 	let captchaToken = '';
 	let captchaImageUrl = '';
@@ -55,6 +63,33 @@
 	let captchaStatusType = ''; // 'success' | 'error'
 
 	let openWebUIFormOpen = false;
+
+	const SIGNIN_GUIDE_STORAGE_KEY = 'bharatai_signin_guide_open';
+	let showManual = false;
+	let manualFrameSrc = '';
+
+	const openManual = () => {
+		showManual = true;
+		if (!manualFrameSrc) {
+			manualFrameSrc = '/static/user-manual-signin.pdf#zoom=100';
+		}
+		try {
+			localStorage.setItem(SIGNIN_GUIDE_STORAGE_KEY, '1');
+		} catch (e) {}
+	};
+
+	const closeManual = () => {
+		showManual = false;
+		try {
+			localStorage.removeItem(SIGNIN_GUIDE_STORAGE_KEY);
+		} catch (e) {}
+	};
+
+	const handleManualKeydown = (e: KeyboardEvent) => {
+		if (e.key === 'Escape' && showManual) {
+			closeManual();
+		}
+	};
 
 	async function refreshCaptcha() {
 		captchaInputValue = '';
@@ -132,6 +167,7 @@
 
 	const setSessionUser = async (sessionUser, redirectPath: string | null = null) => {
 		if (sessionUser) {
+			closeManual();
 			console.log(sessionUser);
 			toast.success($i18n.t(`You're now logged in.`));
 			if (sessionUser.token) {
@@ -190,16 +226,41 @@
 			}
 		}
 
-		const sessionUser = await userSignUp(name, email, password, generateInitialsImage(name)).catch(
-			(error) => {
-				toast.error(`${error}`);
-				loggingIn = false;
-				return null;
-			}
-		);
+		const sessionUser = await userSignUp(
+			name,
+			email,
+			password,
+			generateInitialsImage(name),
+			department,
+			designation,
+			mobileNumber
+		).catch((error) => {
+			toast.error(`${error}`);
+			loggingIn = false;
+			return null;
+		});
 
 		if (sessionUser) {
 			await setSessionUser(sessionUser);
+		} else {
+			loggingIn = false;
+		}
+	};
+
+	const completeProfileHandler = async () => {
+		const updated = await completeUserProfile(
+			localStorage.token,
+			department,
+			designation,
+			mobileNumber
+		).catch((error) => {
+			toast.error(`${error}`);
+			loggingIn = false;
+			return null;
+		});
+
+		if (updated) {
+			await setSessionUser(pendingOauthUser, '/');
 		} else {
 			loggingIn = false;
 		}
@@ -219,7 +280,7 @@
 	};
 
 	const submitHandler = async () => {
-		if (!captchaVerified) {
+		if (mode !== 'signup-complete' && !captchaVerified) {
 			toast.error($i18n.t('Please complete the captcha verification.'));
 			return;
 		}
@@ -229,6 +290,8 @@
 			await ldapSignInHandler();
 		} else if (mode === 'signin') {
 			await signInHandler();
+		} else if (mode === 'signup-complete') {
+			await completeProfileHandler();
 		} else {
 			await signUpHandler();
 		}
@@ -258,6 +321,17 @@
 		}
 
 		localStorage.token = token;
+
+		const newUserFlag = $page.url.searchParams.get('new_user');
+		if (newUserFlag === '1') {
+			openWebUIFormOpen = true;
+			mode = 'signup-complete';
+			name = sessionUser.name || $page.url.searchParams.get('name') || '';
+			email = sessionUser.email || $page.url.searchParams.get('email') || '';
+			pendingOauthUser = sessionUser;
+			return;
+		}
+
 		await setSessionUser(sessionUser, localStorage.getItem('redirectPath') || null);
 	};
 
@@ -304,6 +378,18 @@
 		await oauthCallbackHandler();
 		form = $page.url.searchParams.get('form');
 
+		const modeParam = $page.url.searchParams.get('mode');
+		if (modeParam === 'signup' && mode !== 'signup-complete') {
+			if ($config?.features?.enable_signup) {
+				openWebUIFormOpen = true;
+				mode = 'signup';
+			} else {
+				toast.error(
+					$i18n.t('New sign-ups are currently disabled. Please contact your administrator.')
+				);
+			}
+		}
+
 		// Auto-redirect to SSO when OAUTH_AUTO_REDIRECT is enabled and the
 		// deployment is unambiguously SSO-only (single provider, no login form,
 		// no LDAP). Suppressed by ?form=, ?error=, onboarding, trusted-header
@@ -329,6 +415,13 @@
 		setLogoImage();
 		refreshCaptcha();
 
+		try {
+			if (localStorage.getItem(SIGNIN_GUIDE_STORAGE_KEY) === '1') {
+				manualFrameSrc = '/static/user-manual-signin.pdf#zoom=100';
+				showManual = true;
+			}
+		} catch (e) {}
+
 		if (($config?.features?.auth_trusted_header ?? false) || $config?.features?.auth === false) {
 			await signInHandler();
 		} else {
@@ -350,6 +443,8 @@
 		mode = $config?.features.enable_ldap ? 'ldap' : 'signup';
 	}}
 />
+
+<svelte:window on:keydown={handleManualKeydown} />
 
 <div
 	class="w-full min-h-screen flex items-center justify-center p-4 md:p-8 text-white relative overflow-hidden"
@@ -381,7 +476,11 @@
 	{#if loaded}
 		<!-- Main Floating Glass Container -->
 		<div
-			class="w-full max-w-5xl min-h-[600px] md:min-h-[680px] my-auto rounded-3xl overflow-hidden border border-white/10 bg-white/[0.03] backdrop-blur-2xl shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] flex flex-col md:flex-row z-10"
+			class="w-full {showManual
+				? 'max-w-md'
+				: 'max-w-5xl'} min-h-[600px] md:min-h-[680px] my-auto rounded-3xl overflow-hidden border border-white/10 bg-white/[0.03] backdrop-blur-2xl shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] flex flex-col md:flex-row z-10 transition-[max-width,transform] duration-500 ease-in-out {showManual
+				? 'md:-translate-x-[18vw]'
+				: ''}"
 		>
 			{#if ($config?.features.auth_trusted_header ?? false) || $config?.features.auth === false}
 				<div class="w-full h-full flex flex-col justify-center items-center bg-transparent">
@@ -400,7 +499,8 @@
 					</div>
 				</div>
 			{:else}
-				<!-- Left Panel (Info & Highlights) -->
+				<!-- Left Panel (Info & Highlights) — hidden while the guide is open -->
+				{#if !showManual}
 				<div
 					class="w-full md:w-[55%] min-h-full flex flex-col justify-between p-6 md:p-8 border-b md:border-b-0 md:border-r border-white/10 relative overflow-hidden bg-white/[0.01]"
 				>
@@ -451,10 +551,13 @@
 						<span>Designed and Developed by C-DAC</span>
 					</div>
 				</div>
+				{/if}
 
 				<!-- Right Panel (Login Form) -->
 				<div
-					class="w-full md:w-[45%] min-h-full flex flex-col justify-center items-center p-5 md:p-6 bg-black/10 dark:bg-black/30 backdrop-blur-md relative overflow-y-auto"
+					class="w-full {showManual
+						? 'md:w-full'
+						: 'md:w-[45%]'} min-h-full flex flex-col justify-center items-center p-5 md:p-6 bg-black/10 dark:bg-black/30 backdrop-blur-md relative overflow-y-auto"
 				>
 					<div class="w-full max-w-md my-auto z-10">
 						<form
@@ -494,6 +597,8 @@
 							>
 								{#if mode === 'ldap'}
 									{$i18n.t(`Sign in to {{WEBUI_NAME}} with LDAP`, { WEBUI_NAME: $WEBUI_NAME })}
+								{:else if mode === 'signup-complete'}
+									{$i18n.t('Complete your profile')}
 								{:else if mode === 'signin' || ($config?.onboarding ?? false)}
 									{$i18n.t(`Sign in to {{WEBUI_NAME}}`, { WEBUI_NAME: $WEBUI_NAME })}
 								{:else}
@@ -578,9 +683,9 @@
 								</button>
 							{/if}
 
-							{#if ($config?.features.enable_login_form || $config?.features.enable_ldap || form) && openWebUIFormOpen}
+							{#if (($config?.features.enable_login_form || $config?.features.enable_ldap || form) && openWebUIFormOpen) || mode === 'signup-complete'}
 								<div class="flex flex-col space-y-2.5">
-									{#if mode === 'signup'}
+									{#if mode === 'signup' || mode === 'signup-complete'}
 										<div>
 											<label
 												for="name"
@@ -591,9 +696,63 @@
 												bind:value={name}
 												type="text"
 												id="name"
-												class="px-4 py-2.5 rounded-xl border border-white/10 bg-white/[0.04] focus:border-orange-500 focus:ring-1 focus:ring-orange-500/20 text-sm outline-hidden text-white transition duration-200 w-full"
+												class="px-4 py-2.5 rounded-xl border border-white/10 bg-white/[0.04] focus:border-orange-500 focus:ring-1 focus:ring-orange-500/20 text-sm outline-hidden text-white transition duration-200 w-full disabled:opacity-60"
 												autocomplete="name"
 												placeholder={$i18n.t('Enter Your Full Name')}
+												readonly={mode === 'signup-complete'}
+												disabled={mode === 'signup-complete'}
+												required
+											/>
+										</div>
+									{/if}
+
+									{#if mode === 'signup' || mode === 'signup-complete'}
+										<div>
+											<label
+												for="department"
+												class="text-xs font-semibold text-gray-300 text-left mb-1.5 block uppercase tracking-wider"
+												>{$i18n.t('Department')}</label
+											>
+											<input
+												bind:value={department}
+												type="text"
+												id="department"
+												class="px-4 py-2.5 rounded-xl border border-white/10 bg-white/[0.04] focus:border-orange-500 focus:ring-1 focus:ring-orange-500/20 text-sm outline-hidden text-white transition duration-200 w-full"
+												autocomplete="organization"
+												placeholder={$i18n.t('Enter Your Department')}
+												required
+											/>
+										</div>
+										<div>
+											<label
+												for="designation"
+												class="text-xs font-semibold text-gray-300 text-left mb-1.5 block uppercase tracking-wider"
+												>{$i18n.t('Designation')}</label
+											>
+											<input
+												bind:value={designation}
+												type="text"
+												id="designation"
+												class="px-4 py-2.5 rounded-xl border border-white/10 bg-white/[0.04] focus:border-orange-500 focus:ring-1 focus:ring-orange-500/20 text-sm outline-hidden text-white transition duration-200 w-full"
+												autocomplete="organization-title"
+												placeholder={$i18n.t('Enter Your Designation')}
+												required
+											/>
+										</div>
+										<div>
+											<label
+												for="mobile-number"
+												class="text-xs font-semibold text-gray-300 text-left mb-1.5 block uppercase tracking-wider"
+												>{$i18n.t('Mobile Number')}</label
+											>
+											<input
+												bind:value={mobileNumber}
+												type="tel"
+												id="mobile-number"
+												class="px-4 py-2.5 rounded-xl border border-white/10 bg-white/[0.04] focus:border-orange-500 focus:ring-1 focus:ring-orange-500/20 text-sm outline-hidden text-white transition duration-200 w-full"
+												autocomplete="tel"
+												placeholder={$i18n.t('Enter Your Mobile Number')}
+												pattern={'[0-9]{10}'}
 												required
 											/>
 										</div>
@@ -628,15 +787,18 @@
 												bind:value={email}
 												type="email"
 												id="email"
-												class="px-4 py-2.5 rounded-xl border border-white/10 bg-white/[0.04] focus:border-orange-500 focus:ring-1 focus:ring-orange-500/20 text-sm outline-hidden text-white transition duration-200 w-full"
+												class="px-4 py-2.5 rounded-xl border border-white/10 bg-white/[0.04] focus:border-orange-500 focus:ring-1 focus:ring-orange-500/20 text-sm outline-hidden text-white transition duration-200 w-full disabled:opacity-60"
 												autocomplete={mode === 'signup' ? 'email' : 'username'}
 												name="email"
 												placeholder={$i18n.t('Enter Your Email')}
+												readonly={mode === 'signup-complete'}
+												disabled={mode === 'signup-complete'}
 												required
 											/>
 										</div>
 									{/if}
 
+									{#if mode !== 'signup-complete'}
 									<div>
 										<label
 											for="password"
@@ -658,6 +820,7 @@
 											aria-required="true"
 										/>
 									</div>
+									{/if}
 
 									{#if mode === 'signup' && $config?.features?.enable_signup_password_confirmation}
 										<div>
@@ -747,6 +910,7 @@
 									{/if}
 
 									<!-- Text CAPTCHA -->
+									{#if mode !== 'signup-complete'}
 									<div>
 										<label
 											class="text-xs font-semibold text-gray-300 text-left mb-1.5 block uppercase tracking-wider"
@@ -834,11 +998,12 @@
 											</div>
 										{/if}
 									</div>
+									{/if}
 								</div>
 							{/if}
 
 							<div class="mt-3">
-								{#if ($config?.features.enable_login_form || $config?.features.enable_ldap || form) && openWebUIFormOpen}
+								{#if (($config?.features.enable_login_form || $config?.features.enable_ldap || form) && openWebUIFormOpen) || mode === 'signup-complete'}
 									{#if mode === 'ldap'}
 										<button
 											class="bg-linear-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white font-semibold text-sm py-2.5 w-full rounded-xl shadow-lg shadow-orange-500/10 hover:shadow-orange-500/20 transition duration-200"
@@ -851,14 +1016,16 @@
 											class="bg-linear-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white font-semibold text-sm py-2.5 w-full rounded-xl shadow-lg shadow-orange-500/10 hover:shadow-orange-500/20 transition duration-200"
 											type="submit"
 										>
-											{mode === 'signin'
-												? $i18n.t('Sign in')
-												: ($config?.onboarding ?? false)
-													? $i18n.t('Create Admin Account')
-													: $i18n.t('Create Account')}
+											{mode === 'signup-complete'
+												? $i18n.t('Complete Profile')
+												: mode === 'signin'
+													? $i18n.t('Sign in')
+													: ($config?.onboarding ?? false)
+														? $i18n.t('Create Admin Account')
+														: $i18n.t('Create Account')}
 										</button>
 
-										{#if $config?.features.enable_signup && !($config?.onboarding ?? false)}
+										{#if $config?.features.enable_signup && !($config?.onboarding ?? false) && mode !== 'signup-complete'}
 											<div class=" mt-4 text-xs text-center text-gray-400">
 												{mode === 'signin'
 													? $i18n.t("Don't have an account?")
@@ -882,6 +1049,17 @@
 									{/if}
 								{/if}
 							</div>
+
+							<button
+								type="button"
+								class="block w-full mt-3 text-center text-xs text-gray-400 hover:text-white transition-colors duration-150"
+								on:click={openManual}
+							>
+								{$i18n.t('Trouble signing in?')}
+								<span class="text-amber-400 font-semibold underline underline-offset-2"
+									>{$i18n.t('Click here')}</span
+								>
+							</button>
 
 						</form>
 
@@ -1055,6 +1233,37 @@
 		</div>
 
 	{/if}
+</div>
+
+<!-- Registration & Sign-in Guide panel — fixed overlay, slides in from right -->
+<div
+	class="fixed top-0 right-0 h-full {showManual
+		? 'w-full md:w-[44%]'
+		: 'w-0'} overflow-hidden bg-[#0a0b10] border-l border-white/10 shadow-[-12px_0_40px_rgba(0,0,0,0.35)] flex flex-col z-[9990] transition-[width] duration-500 ease-in-out"
+	aria-hidden={!showManual}
+>
+	<div class="flex items-center justify-between gap-4 px-6 py-4 border-b border-white/10 bg-black/20 shrink-0">
+		<h3 class="text-white font-semibold text-base truncate">
+			{$i18n.t('Registration & Sign-in Guide')}
+		</h3>
+		<button
+			type="button"
+			class="w-8 h-8 shrink-0 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center text-xl leading-none transition-colors duration-150"
+			on:click={closeManual}
+			aria-label={$i18n.t('Close user guide')}
+		>
+			&times;
+		</button>
+	</div>
+	<div class="flex-1 min-h-0 bg-[#0d0d0d]">
+		{#if manualFrameSrc}
+			<iframe
+				title="Registration and Sign-in User Guide"
+				src={manualFrameSrc}
+				class="w-full h-full border-0 block"
+			></iframe>
+		{/if}
+	</div>
 </div>
 
 <!-- Terms and Conditions Modal -->

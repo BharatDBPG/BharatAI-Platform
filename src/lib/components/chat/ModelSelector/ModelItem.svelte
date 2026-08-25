@@ -91,7 +91,7 @@
 			</div>
 
 			<div class="flex items-center">
-				<Tooltip content={`${item.label} (${item.value})`} placement="top-start">
+				<Tooltip content={item.model?.info?.meta?.hide_model_id ? item.label : `${item.label} (${item.value})`} placement="top-start">
 					<div class="line-clamp-1">
 						{item.label}
 					</div>

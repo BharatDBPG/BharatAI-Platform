@@ -817,6 +817,15 @@
 
 					<hr class=" border-gray-100/30 dark:border-gray-850/30 my-4" />
 
+					<div class="my-4 flex items-center gap-2">
+						<input
+							type="checkbox"
+							id="hide-model-id"
+							bind:checked={info.meta.hide_model_id}
+						/>
+						<label for="hide-model-id" class="text-sm">{$i18n.t('Hide model ID from users')}</label>
+					</div>
+
 					<div class="my-4">
 						<Capabilities bind:capabilities />
 					</div>
