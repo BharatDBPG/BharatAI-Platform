@@ -81,7 +81,7 @@
 
 	// Sibling service, opened in a new browser tab rather than routed to in-app.
 	const VAARTA_URL = 'https://vaarta.bharatai.gov.in';
-	const VAARTA_LABEL = 'Vaarta ( Meeting Notes )';
+	const VAARTA_LABEL = 'Meeting Records & Notes';
 
 
 	let scrollTop = 0;
