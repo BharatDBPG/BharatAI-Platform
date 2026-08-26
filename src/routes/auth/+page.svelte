@@ -339,7 +339,7 @@
 
 		const token = getCookie('token');
 		if (!token) {
-			return;
+			return false;
 		}
 
 		const sessionUser = await getSessionUser(token).catch((error) => {
@@ -348,7 +348,7 @@
 		});
 
 		if (!sessionUser) {
-			return;
+			return false;
 		}
 
 		localStorage.token = token;
@@ -362,10 +362,11 @@
 			name = sessionUser.name || $page.url.searchParams.get('name') || '';
 			email = sessionUser.email || $page.url.searchParams.get('email') || '';
 			pendingOauthUser = sessionUser;
-			return;
+			return true;
 		}
 
 		await setSessionUser(sessionUser, localStorage.getItem('redirectPath') || null);
+		return true;
 	};
 
 	let onboarding = false;
@@ -408,7 +409,9 @@
 			toast.error(error);
 		}
 
-		await oauthCallbackHandler();
+		const oauthHandled = await oauthCallbackHandler();
+		if (oauthHandled) return;
+
 		form = $page.url.searchParams.get('form');
 
 		const modeParam = $page.url.searchParams.get('mode');
@@ -728,7 +731,7 @@
 							{/if}
 
 							<!-- Collapsible: Login Using OpenWebUI -->
-							{#if ($config?.features.enable_login_form || $config?.features.enable_ldap || form) && mode !== 'signup-done'}
+							{#if ($config?.features.enable_login_form || $config?.features.enable_ldap || form) && mode !== 'signup-done' && mode !== 'signup' && mode !== 'signup-complete'}
 								<button
 									type="button"
 									class="bg-linear-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white font-semibold text-sm py-2.5 w-full rounded-xl shadow-lg shadow-orange-500/10 hover:shadow-orange-500/20 transition duration-200 flex items-center justify-center gap-2 relative px-4 mb-2"

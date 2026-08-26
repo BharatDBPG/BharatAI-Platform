@@ -250,6 +250,9 @@ class SessionUserInfoResponse(SessionUserResponse, UserStatus):
     bio: str | None = None
     gender: str | None = None
     date_of_birth: datetime.date | None = None
+    department: str | None = None
+    designation: str | None = None
+    mobile_number: str | None = None
 
 
 @router.get('/', response_model=SessionUserInfoResponse)
@@ -308,6 +311,9 @@ async def get_session_user(
         'bio': user.bio,
         'gender': user.gender,
         'date_of_birth': user.date_of_birth,
+        'department': user.department,
+        'designation': user.designation,
+        'mobile_number': user.mobile_number,
         'status_emoji': user.status_emoji,
         'status_message': user.status_message,
         'status_expires_at': user.status_expires_at,
