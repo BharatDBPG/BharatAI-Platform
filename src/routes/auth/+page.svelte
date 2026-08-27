@@ -362,6 +362,7 @@
 			name = sessionUser.name || $page.url.searchParams.get('name') || '';
 			email = sessionUser.email || $page.url.searchParams.get('email') || '';
 			pendingOauthUser = sessionUser;
+			loaded = true;
 			return true;
 		}
 
