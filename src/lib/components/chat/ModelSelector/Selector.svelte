@@ -35,8 +35,13 @@
 	import Tooltip from '$lib/components/common/Tooltip.svelte';
 	import Switch from '$lib/components/common/Switch.svelte';
 	import ChatBubbleOval from '$lib/components/icons/ChatBubbleOval.svelte';
+	import Mic from '$lib/components/icons/Mic.svelte';
 
 	import ModelItem from './ModelItem.svelte';
+
+	const VAARTA_URL = 'https://vaarta.bharatai.gov.in';
+	const VAARTA_LABEL = 'Meeting Records & Notes';
+	$: showVaarta = !searchValue.trim() || VAARTA_LABEL.toLowerCase().includes(searchValue.trim().toLowerCase());
 
 	const i18n = getContext('i18n');
 	const dispatch = createEventDispatcher();
@@ -752,6 +757,26 @@
 								{/each}
 								<div style="height: {(filteredItems.length - visibleEnd) * ITEM_HEIGHT}px;" />
 							</div>
+						{/if}
+
+						{#if showVaarta}
+							<button
+								class="flex w-full text-left font-medium select-none items-center rounded-xl py-2 pl-3 pr-1.5 text-sm text-gray-700 dark:text-gray-100 transition-all duration-75 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer"
+								on:click={() => {
+									window.open(VAARTA_URL, '_blank');
+									show = false;
+								}}
+								aria-label={VAARTA_LABEL}
+							>
+								<div class="flex items-center gap-2">
+									<div class="flex items-center min-w-fit">
+										<div class="rounded-full size-5 flex items-center justify-center bg-gray-200 dark:bg-gray-700">
+											<Mic className="size-3" strokeWidth="2" />
+										</div>
+									</div>
+									<div class="line-clamp-1">{VAARTA_LABEL}</div>
+								</div>
+							</button>
 						{/if}
 
 						{#if !(searchValue.trim() in $MODEL_DOWNLOAD_POOL) && searchValue && ollamaVersion && $user?.role === 'admin'}
