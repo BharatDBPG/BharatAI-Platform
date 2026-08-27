@@ -90,6 +90,7 @@ class SignupForm(BaseModel):
 
 
 class AddUserForm(SignupForm):
+    password: str  # required when admin adds a user directly
     role: str | None = 'pending'
 
 
