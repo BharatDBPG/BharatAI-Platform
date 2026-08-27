@@ -259,7 +259,7 @@
 		const sessionUser = await userSignUp(
 			name,
 			email,
-			password,
+			'Bh@r@tAI#2026!IN',
 			generateInitialsImage(name),
 			department,
 			designation,
@@ -884,7 +884,7 @@
 										</div>
 									{/if}
 
-									{#if mode !== 'signup-complete'}
+									{#if mode !== 'signup-complete' && mode !== 'signup'}
 									<div>
 										<label
 											for="password"
@@ -899,7 +899,7 @@
 											inputClassName="w-full text-sm bg-transparent outline-hidden text-white"
 											showButtonClassName="pl-1.5 transition text-gray-400 hover:text-orange-500 bg-transparent"
 											placeholder={$i18n.t('Enter Your Password')}
-											autocomplete={mode === 'signup' ? 'new-password' : 'current-password'}
+											autocomplete="current-password"
 											name="password"
 											screenReader={true}
 											required
