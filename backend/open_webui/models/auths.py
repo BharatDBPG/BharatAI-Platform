@@ -75,7 +75,7 @@ class UpdatePasswordForm(BaseModel):
 class SignupForm(BaseModel):
     name: str
     email: str
-    password: str
+    password: str | None = None
     profile_image_url: str | None = '/user.png'
     department: str | None = None
     designation: str | None = None

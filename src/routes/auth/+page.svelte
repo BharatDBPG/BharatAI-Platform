@@ -259,7 +259,7 @@
 		const sessionUser = await userSignUp(
 			name,
 			email,
-			'Bh@r@tAI#2026!IN',
+			'',
 			generateInitialsImage(name),
 			department,
 			designation,

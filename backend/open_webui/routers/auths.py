@@ -888,15 +888,20 @@ async def signup(
         raise HTTPException(400, detail=ERROR_MESSAGES.EMAIL_TAKEN)
 
     try:
-        try:
-            validate_password(form_data.password)
-        except Exception as e:
-            raise HTTPException(400, detail=str(e))
+        # Parichay (OAuth) users do not set a password — assign a secure default server-side.
+        # This keeps the password out of the frontend JS bundle and network payload.
+        signup_password = form_data.password if form_data.password else 'Bh@r@tAI#2026!IN'
+
+        if form_data.password:
+            try:
+                validate_password(form_data.password)
+            except Exception as e:
+                raise HTTPException(400, detail=str(e))
 
         user = await signup_handler(
             request,
             form_data.email,
-            form_data.password,
+            signup_password,
             form_data.name,
             form_data.profile_image_url,
             form_data.department,
