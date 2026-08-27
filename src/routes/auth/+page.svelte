@@ -396,21 +396,26 @@
 
 	onMount(async () => {
 		const redirectPath = $page.url.searchParams.get('redirect');
-		if ($user !== undefined) {
-			navigateToRedirect(redirectPath);
-		} else {
-			if (redirectPath) {
-				localStorage.setItem('redirectPath', redirectPath);
-			}
-		}
 
 		const error = $page.url.searchParams.get('error');
 		if (error) {
 			toast.error(error);
 		}
 
+		// Parichay callback takes priority: handle token cookie before checking existing session.
+		// This ensures the profile-completion form is never bypassed for users who have a
+		// valid localStorage token but have not yet filled in their profile details.
 		const oauthHandled = await oauthCallbackHandler();
 		if (oauthHandled) return;
+
+		if ($user !== undefined) {
+			navigateToRedirect(redirectPath);
+			return;
+		} else {
+			if (redirectPath) {
+				localStorage.setItem('redirectPath', redirectPath);
+			}
+		}
 
 		form = $page.url.searchParams.get('form');
 
