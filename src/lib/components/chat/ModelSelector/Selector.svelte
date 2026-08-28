@@ -39,7 +39,7 @@
 
 	import ModelItem from './ModelItem.svelte';
 
-	const VAARTA_URL = 'https://vaarta.bharatai.gov.in';
+	const VAARTA_URL = 'https://vaarta.bharatai.gov.in/oauth/parichay/login';
 	const VAARTA_LABEL = 'Meeting Records & Notes';
 	$: showVaarta = !searchValue.trim() || VAARTA_LABEL.toLowerCase().includes(searchValue.trim().toLowerCase());
 
