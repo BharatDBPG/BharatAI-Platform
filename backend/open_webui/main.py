@@ -1465,7 +1465,7 @@ if ENABLE_SCIM:
 
 
 @app.post("/api/submit-feedback")
-async def submit_feedback_proxy(request: Request, user=Depends(get_verified_user)):
+async def submit_feedback_proxy(request: Request):
     import sqlite3 as _sqlite3
 
     try:

@@ -193,6 +193,180 @@
       max-width: 480px;
     }
 
+    .feedback-trigger-btn {
+      font-family: inherit;
+      font-size: 16px;
+      font-weight: 600;
+      padding: 14px 36px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: #163371;
+      color: #fff;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+      transition: all 0.1s ease;
+      align-self: flex-start;
+      margin-top: 1rem;
+    }
+
+    .feedback-trigger-btn:hover {
+      background: #234ba8;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+    }
+
+    /* ---- feedback modal ---- */
+    .fb-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(5px);
+      z-index: 9999;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .fb-overlay.active { display: flex; }
+
+    .fb-modal {
+      position: relative;
+      background: #ffffff;
+      width: 90%;
+      max-width: 420px;
+      border-radius: 14px;
+      padding: 36px 30px 28px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+      animation: fbFadeIn 0.2s ease;
+      color: var(--text);
+    }
+
+    @keyframes fbFadeIn {
+      from { opacity: 0; transform: translateY(-12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .fb-close-btn {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: none;
+      background: #e63946;
+      color: #fff;
+      font-size: 20px;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s ease;
+    }
+
+    .fb-close-btn:hover { background: #c92a37; }
+
+    .fb-title {
+      font-family: var(--display);
+      font-size: 22px;
+      margin: 0 0 20px;
+      color: var(--ink);
+    }
+
+    .fb-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: #444;
+      margin-bottom: 6px;
+    }
+
+    .fb-label-with-icon {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .fb-word-count {
+      font-size: 12px;
+      color: #777;
+      margin: -6px 0 12px;
+      text-align: right;
+    }
+
+    .fb-info-icon {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #ccc;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      font-style: normal;
+      cursor: help;
+    }
+
+    .fb-info-icon .fb-tooltip {
+      display: none;
+      position: absolute;
+      bottom: 130%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--ink);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 400;
+      white-space: nowrap;
+      padding: 6px 10px;
+      border-radius: 6px;
+      z-index: 1;
+    }
+
+    .fb-info-icon:hover .fb-tooltip,
+    .fb-info-icon:focus .fb-tooltip { display: block; }
+
+    .fb-input,
+    .fb-textarea {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 10px 12px;
+      font-size: 14px;
+      font-family: inherit;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      outline: none;
+      transition: border-color 0.15s ease;
+    }
+
+    .fb-input:focus,
+    .fb-textarea:focus { border-color: var(--ink); }
+    .fb-textarea { resize: none; }
+
+    .fb-primary-btn {
+      background: var(--ink);
+      color: #fff;
+      border: none;
+      padding: 10px 22px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+
+    .fb-primary-btn:hover { background: #2A3654; }
+    .fb-btn-row { display: flex; align-items: center; }
+    .fb-error-msg { color: #c92a37; font-size: 13px; margin: 6px 0 0; min-height: 16px; }
+    .fb-success-msg { color: #2a9d5c; font-size: 13px; margin: 10px 0 0; min-height: 16px; }
 
     /* ---- right side: Card ---- */
     .visual-stage {
@@ -511,6 +685,7 @@
     <div class="hero hero-copy">
       <h1>Bharat AI<br><span class="tri">Platform</span></h1>
       <p class="hero-sub">One secure gate to India's sovereign AI.</p>
+      <button type="button" id="openFeedbackBtn" class="feedback-trigger-btn">Submit Feedback</button>
     </div>
     <!-- Right Column: Glassmorphism Card -->
     <div class="visual-stage">
@@ -552,6 +727,44 @@
     </div>
     <div class="manual-panel-body">
       <iframe id="manualPdfFrame" class="manual-pdf-frame" title="Registration and Sign-in User Guide" src="" data-src="/static/user-manual-signin.pdf#view=FitH&navpanes=0"></iframe>
+    </div>
+  </div>
+
+  <!-- Submit Feedback Modal -->
+  <div class="fb-overlay" id="fbOverlay" role="dialog" aria-modal="true" aria-labelledby="fbModalTitle">
+    <div class="fb-modal">
+      <button type="button" class="fb-close-btn" id="fbCloseBtn" aria-label="Close feedback">&times;</button>
+      <h2 class="fb-title" id="fbModalTitle">Submit Feedback</h2>
+
+      <label class="fb-label" for="fbCommentInput">Your feedback</label>
+      <textarea
+        id="fbCommentInput"
+        class="fb-textarea"
+        rows="5"
+        placeholder="Write your feedback here..."
+      ></textarea>
+      <p class="fb-word-count" id="fbWordCount">0 / 100 words</p>
+
+      <label class="fb-label fb-label-with-icon" for="fbEmailInput">
+        Enter email
+        <i class="fb-info-icon" tabindex="0">i
+          <span class="fb-tooltip">We use your email only to follow up if needed.</span>
+        </i>
+      </label>
+      <input
+        type="email"
+        id="fbEmailInput"
+        class="fb-input"
+        placeholder="you@example.com"
+        autocomplete="email"
+      />
+
+      <div class="fb-btn-row">
+        <button type="button" id="fbSubmitCommentBtn" class="fb-primary-btn">Submit</button>
+      </div>
+
+      <p class="fb-error-msg" id="fbErrorMsg"></p>
+      <p class="fb-success-msg" id="fbSuccessMsg"></p>
     </div>
   </div>
 
@@ -613,6 +826,111 @@
         if (e.key === 'Escape' && document.body.classList.contains('manual-open')) { closeManual(); }
       });
       try { if (localStorage.getItem(STORAGE_KEY) === '1') { openManual(false); } } catch (e) {}
+    })();
+  </script>
+
+  <script>
+    (function () {
+      var SUBMIT_API_ENDPOINT = '/api/submit-feedback';
+      var MAX_WORDS = 100;
+
+      var overlay        = document.getElementById('fbOverlay');
+      var openBtn        = document.getElementById('openFeedbackBtn');
+      var closeBtn       = document.getElementById('fbCloseBtn');
+      var emailInput     = document.getElementById('fbEmailInput');
+      var commentInput   = document.getElementById('fbCommentInput');
+      var wordCountEl    = document.getElementById('fbWordCount');
+      var submitBtn      = document.getElementById('fbSubmitCommentBtn');
+      var errorMsg       = document.getElementById('fbErrorMsg');
+      var successMsg     = document.getElementById('fbSuccessMsg');
+
+      function getWords(text) {
+        var t = text.trim();
+        return t.length ? t.split(/\s+/) : [];
+      }
+
+      function updateWordCount() {
+        var words = getWords(commentInput.value);
+        if (words.length > MAX_WORDS) {
+          commentInput.value = words.slice(0, MAX_WORDS).join(' ');
+          words = getWords(commentInput.value);
+        }
+        wordCountEl.textContent = words.length + ' / ' + MAX_WORDS + ' words';
+      }
+
+      commentInput.addEventListener('input', updateWordCount);
+
+      function resetModal() {
+        emailInput.value    = '';
+        commentInput.value  = '';
+        errorMsg.textContent   = '';
+        successMsg.textContent = '';
+        updateWordCount();
+        submitBtn.disabled    = false;
+        submitBtn.textContent = 'Submit';
+      }
+
+      function openModal()  { overlay.classList.add('active'); resetModal(); }
+      function closeModal() { overlay.classList.remove('active'); }
+
+      openBtn.addEventListener('click', openModal);
+      closeBtn.addEventListener('click', closeModal);
+      overlay.addEventListener('click', function (e) { if (e.target === overlay) closeModal(); });
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && overlay.classList.contains('active')) closeModal();
+      });
+
+      submitBtn.addEventListener('click', async function () {
+        var comment = commentInput.value.trim();
+        var email   = emailInput.value.trim();
+        errorMsg.textContent   = '';
+        successMsg.textContent = '';
+
+        if (!email) {
+          errorMsg.textContent = 'Please enter your email.';
+          return;
+        }
+
+        var emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailPattern.test(email)) {
+          errorMsg.textContent = 'Please enter a valid email address.';
+          return;
+        }
+
+        if (!comment) {
+          errorMsg.textContent = 'Please write some feedback before submitting.';
+          return;
+        }
+
+        if (getWords(comment).length > MAX_WORDS) {
+          errorMsg.textContent = 'Feedback cannot exceed ' + MAX_WORDS + ' words.';
+          return;
+        }
+
+        submitBtn.disabled    = true;
+        submitBtn.textContent = 'Submitting...';
+
+        try {
+          var response = await fetch(SUBMIT_API_ENDPOINT, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: email, comment: comment })
+          });
+
+          if (!response.ok) {
+            var errData = await response.json().catch(function () { return {}; });
+            throw new Error(errData.detail || errData.error || 'Submission failed');
+          }
+
+          successMsg.textContent = 'Thank you! Your feedback has been submitted.';
+          setTimeout(closeModal, 2000);
+        } catch (err) {
+          errorMsg.textContent = err.message || 'Failed to submit feedback. Please try again.';
+        } finally {
+          submitBtn.disabled    = false;
+          submitBtn.textContent = 'Submit';
+        }
+      });
     })();
   </script>
 
